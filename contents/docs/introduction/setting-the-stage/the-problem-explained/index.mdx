@@ -1,0 +1,101 @@
+---
+title: The Problem Explained
+description: Define the control task, the metrics that matter, and why the naive “aim-at-a-point” approach fails on real tracks.
+keywords: ["racing control", "vehicle control", "lookahead", "friction circle", "metrics", "lap time", "jerk"]
+---
+
+## The Task in One Sentence
+
+Map **state** \( (x, y, \psi, v) \) to **inputs** — steering \( \delta \) and longitudinal acceleration \( a \) — so the car laps a track **quickly and safely**.
+
+- **State:** position \(x,y\), heading \( \psi \), speed \( v \)
+- **Inputs:** steering angle \( \delta \), accel/brake \( a \)
+
+> We’ll assume a known centerline (or cones → midline) and use a minimal dynamic bicycle model in later sections.
+
+---
+
+## What Counts as “Good” (Metrics & Trade-offs)
+
+| Metric              | What it captures                                 | Why it matters                         |
+|---------------------|---------------------------------------------------|----------------------------------------|
+| **Lap Time**        | Overall performance                               | Primary objective                      |
+| **Missed-Apex Count** | Geometric accuracy near peak curvature          | Cornering quality & line discipline    |
+| **Max Lateral g**   | Peak lateral demand (risk envelope)              | Grip usage / stability margin          |
+| **Mean Jerk**       | Average rate-of-change of accel/steer            | Comfort, mechanical sympathy, robustness |
+
+**Trade-offs:**  
+- Faster **vs** smoother (lap time ↔ jerk)  
+- Faster **vs** robust (lap time ↔ margin to limits)  
+- Smooth **vs** responsive (comfort ↔ ability to rotate car)
+
+---
+
+## First Attempt: “Aim at a Point and Go” — and Why It Fails
+
+**Naive idea (sounds reasonable):**
+1. Take a point a little way ahead on the centerline.
+2. **Steering:** set \( \delta \propto \) heading error to that point.
+3. **Throttle:** reduce as the absolute heading error grows.
+
+**Observed failure modes:**
+- **Oscillation / weaving** on straights (too reactive, no preview discipline).
+- **Late braking** into corners (no curvature anticipation → overspeed).
+- **Apex misses** (lookahead/geometry mismatch at high curvature).
+- **Curvature-blind speed** (throttle tied to heading error, not physics).
+- **Unstable gains** across speeds (what’s steady at 20 km/h jitters at 120 km/h).
+- **High jerk** (unfiltered commands; poor comfort and reliability).
+
+> This controller is useful only as a foil. It motivates the three fixes below.
+
+---
+
+## Three Ideas We’ll Need (Preview)
+
+1. **Preview / Lookahead:** pick a target at arc-length \( s + L \) (not “closest point”).  
+2. **Curvature → Speed Cap (Friction Circle):**
+```math  
+    v_{\max}(s) \approx \sqrt{ \mu g / |\kappa(s)| }
+```
+      → plan speed vs curvature, not vs heading error.  
+3. **Gain Scheduling & Smoothing:** speed-aware steering gains and gentle rate limits to control jerk.
+
+We’ll implement these incrementally, then expose **style** as explicit, interpretable parameters.
+
+---
+
+## Assumptions & Scope (for this section)
+
+- Planar track; known centerline (or cones → midline).  
+- Minimal **dynamic bicycle** backbone; fixed \( \mu \) (no tyres/temperature/aero).  
+- No traffic or perception stack; we’re teaching **control style**, not racecraft.
+
+---
+
+## Quick Checks
+
+- If curvature **doubles**, feasible speed ```math v_{\max}``` changes by…  
+  **Answer:** decreases by \( 1/\sqrt{2} \).
+- Which metric best reflects **comfort/robustness** under equal lap times?  
+  **Answer:** **Mean jerk** (lower is better).
+
+<CardGrid>
+  <Card
+    subtitle="Next"
+    title="Assumptions & Scope"
+    description="Keep the model honest and the story teachable."
+    href="/intro#scope"
+  />
+  <Card
+    subtitle="Continue"
+    title="Physics Backbone"
+    description="Dynamic Bicycle in one screen: state, inputs, feasibility."
+    href="/intro#physics-backbone"
+  />
+  <Card
+    subtitle="Skip Ahead"
+    title="Style-Parameterized Controller"
+    description="Turn the mental model into sliders you can reason about."
+    href="/style-controller"
+  />
+</CardGrid>
