@@ -20,47 +20,47 @@ export const Documents = [
     },
     {
         title: "Physics Backbone",
-        href: "/basic-setup",
+        href: "/physics-backbone",
         items: [
             {
                 title: "Feasibility Of The Dynamic Bicycle Model",
-                href: "/installation",
+                href: "/feasibility-of-the-dynamic-bicycle-model",
             },
             {
                 title: "Inputs, Outputs & State",
-                href: "/setup",
+                href: "/inputs-outputs-and-state",
             },
             {
                 title: "What This Buys Us",
-                href: "/setup",
+                href: "/what-this-buys-us",
             }
         ],
     },
     {
         title: "MPCC",
-        href: "/basic-setup",
+        href: "/mpcc",
         items: [
             {
                 title: "The Idea",
-                href: "/installation",
+                href: "/the-idea",
             },
             {
                 title: "Weights/Constraints And What They Mean",
-                href: "/setup",
+                href: "/weights-and-constraints",
             }
         ],
     },
     {
         title: "How We Measure & Interact",
-        href: "/basic-setup",
+        href: "/measurement-and-interaction",
         items: [
             {
                 title: "Datasets + Tracks",
-                href: "/installation",
+                href: "/datasets-and-tracks",
             },
             {
                 title: "The Playground",
-                href: "/setup",
+                href: "/the-playground",
             }
         ],
     },
@@ -69,7 +69,7 @@ export const Documents = [
     },
     {
         title: "Idea To Implementation",
-        href: "/navigation",
+        href: "/style-parameterized-controller",
         heading: "Style-Parameterized Controller",
     },
     {
@@ -77,39 +77,39 @@ export const Documents = [
     },
     {
         title: "Interactive Playground",
-        href: "/markdown",
+        href: "/interactive-playground",
         heading: "Demos & Comparisons",
         items: [
             {
                 title: "Style-Param Controller Playground",
-                href: "/cards",
+                href: "/style-param-controller-playground",
             },
             {
                 title: "MPCC-like Controller Playground",
-                href: "/diagrams",
+                href: "/mpcc-controller-playground",
             },
             {
                 title: "Head-To-Head Replay",
-                href: "/filetree",
+                href: "/head-to-head-replay",
             },
             {
                 title: "Metrics",
-                href: "/lists",
+                href: "/metrics",
             }
         ],
     },
     {
         title: "Test Your Knowledge",
-        href: "/markdown",
+        href: "/quizzes",
         heading: "Quizzes & Exercises",
         items: [
             {
                 title: "Basics Quiz 1",
-                href: "/cards",
+                href: "/basics-quiz-1",
             },
             {
                 title: "Predict Quiz 2",
-                href: "/cards",
+                href: "/predict-quiz-2",
             }
         ],
     },
