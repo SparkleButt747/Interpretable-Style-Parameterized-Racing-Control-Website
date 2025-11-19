@@ -47,7 +47,7 @@ export default function Search() {
       if (isOpen && event.key === "Enter" && filteredResults.length > 2) {
         const selected = filteredResults[0]
         if ("href" in selected) {
-          window.location.href = `/docs${selected.href}`
+          window.location.href = `/learn${selected.href}`
           setIsOpen(false)
         }
       }
@@ -70,7 +70,7 @@ export default function Search() {
 
   function renderDocuments(
     documents: Document[],
-    parentHref: string = "/docs"
+    parentHref: string = "/learn"
   ): React.ReactNode[] {
     if (!Array.isArray(documents) || documents.length === 0) {
       return []
@@ -168,7 +168,7 @@ export default function Search() {
                             className={cn(
                               "flex w-full max-w-[310px] flex-col gap-0.5 rounded-sm p-3 text-[15px] transition-all duration-300 hover:bg-neutral-100 sm:max-w-[480px] dark:hover:bg-neutral-900"
                             )}
-                            href={`/docs${item.href}`}
+                            href={`/learn${item.href}`}
                           >
                             <div className="flex h-full items-center gap-x-2">
                               <LuFileText className="h-[1.1rem] w-[1.1rem]" />

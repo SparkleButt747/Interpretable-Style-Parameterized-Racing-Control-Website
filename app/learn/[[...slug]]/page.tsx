@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: PageProps) {
     openGraph: {
       title: `${frontmatter.title} - ${Settings.openGraph.title}`,
       description: frontmatter.description || Settings.openGraph.description,
-      url: `${Settings.metadataBase}/docs/${pathName}`,
+      url: `${Settings.metadataBase}/learn/${pathName}`,
       siteName: Settings.openGraph.siteName,
       type: "article",
       images: Settings.openGraph.images.map((image) => ({
@@ -83,7 +83,7 @@ export async function generateMetadata({ params }: PageProps) {
       })),
     },
     alternates: {
-      canonical: `${Settings.metadataBase}/docs/${pathName}`,
+      canonical: `${Settings.metadataBase}/learn/${pathName}`,
     },
   }
 }

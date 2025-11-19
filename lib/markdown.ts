@@ -27,7 +27,7 @@ declare module "hast" {
 type BaseMdxFrontmatter = {
   title: string
   description: string
-  keywords: string
+  keywords: string[]
 }
 
 async function parseMdx<Frontmatter>(rawMdx: string) {
@@ -54,8 +54,8 @@ async function parseMdx<Frontmatter>(rawMdx: string) {
 
 const documentPath = (slug: string) => {
   return Settings.gitload
-    ? `${GitHubLink.href}/raw/main/contents/docs/${slug}/index.mdx`
-    : path.join(process.cwd(), "/contents/docs/", `${slug}/index.mdx`)
+    ? `${GitHubLink.href}/raw/main/contents/learn/${slug}/index.mdx`
+    : path.join(process.cwd(), "/contents/learn/", `${slug}/index.mdx`)
 }
 
 const getDocumentPath = (() => {
@@ -117,7 +117,7 @@ export async function getTable(
   let rawMdx = ""
 
   if (Settings.gitload) {
-    const contentPath = `${GitHubLink.href}/raw/main/contents/docs/${slug}/index.mdx`
+    const contentPath = `${GitHubLink.href}/raw/main/contents/learn/${slug}/index.mdx`
     try {
       const response = await fetch(contentPath)
       if (!response.ok) {
@@ -133,7 +133,7 @@ export async function getTable(
   } else {
     const contentPath = path.join(
       process.cwd(),
-      "/contents/docs/",
+      "/contents/learn/",
       `${slug}/index.mdx`
     )
     try {
@@ -196,6 +196,43 @@ const preCopy = () => (tree: Node) => {
       }
     }
   })
+}
+
+type StandaloneSection = "playground" | "appendix"
+
+const standaloneSectionPath = (section: StandaloneSection) => {
+  return Settings.gitload
+    ? `${GitHubLink.href}/raw/main/contents/${section}/index.mdx`
+    : path.join(process.cwd(), "contents", section, "index.mdx")
+}
+
+export async function getStandaloneSection(section: StandaloneSection) {
+  const contentPath = standaloneSectionPath(section)
+  let rawMdx = ""
+  let lastUpdated: string | null = null
+
+  if (Settings.gitload) {
+    const response = await fetch(contentPath)
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch ${section} content from GitHub: ${response.statusText}`
+      )
+    }
+    rawMdx = await response.text()
+    lastUpdated = response.headers.get("Last-Modified") ?? null
+  } else {
+    rawMdx = await fs.readFile(contentPath, "utf-8")
+    const stats = await fs.stat(contentPath)
+    lastUpdated = stats.mtime.toISOString()
+  }
+
+  const parsedMdx = await parseMdx<BaseMdxFrontmatter>(rawMdx)
+
+  return {
+    frontmatter: parsedMdx.frontmatter,
+    content: parsedMdx.content,
+    lastUpdated,
+  }
 }
 
 const postCopy = () => (tree: Node) => {
