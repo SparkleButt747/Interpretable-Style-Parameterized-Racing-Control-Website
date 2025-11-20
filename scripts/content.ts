@@ -8,12 +8,12 @@ import remarkMdx from "remark-mdx"
 import remarkParse from "remark-parse"
 import remarkStringify from "remark-stringify"
 import { unified } from "unified"
-import { Node, Parent } from "unist"
+import type { Node, Parent } from "unist"
 import { visit } from "unist-util-visit"
 
 import { Paths } from "@/lib/pageroutes"
 
-const docsDir = path.join(process.cwd(), "contents/docs")
+const docsDir = path.join(process.cwd(), "contents/learn")
 const outputDir = path.join(process.cwd(), "public", "search-data")
 
 interface MdxJsxFlowElement extends Node {

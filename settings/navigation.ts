@@ -3,8 +3,16 @@ import { PageRoutes } from "@/lib/pageroutes"
 export const Navigations = [
   {
     title: "Learn",
-    href: `/docs${PageRoutes[0].href}`,
-  }
+    href: `/learn${PageRoutes[0].href}`,
+  },
+  {
+    title: "Playground",
+    href: "/playground",
+  },
+  {
+    title: "Appendix",
+    href: "/appendix",
+  },
 ]
 
 export const GitHubLink = {

@@ -15,14 +15,13 @@ export function Navbar() {
     <nav className="bg-opacity-5 sticky top-0 z-50 mx-auto flex h-16 w-full items-center justify-between border-b p-1 px-2 backdrop-blur-xl backdrop-filter sm:p-3 md:gap-2 md:px-4">
       <div className="flex items-center gap-5">
         <SheetLeft />
-        <div className="flex items-center gap-6">
-          <div className="hidden md:flex">
-            <Logo />
-          </div>
-          <div className="text-muted-foreground hidden items-center gap-5 text-sm font-medium md:flex">
-            <NavMenu />
-          </div>
+        <div className="hidden md:flex">
+          <Logo />
         </div>
+      </div>
+
+      <div className="text-muted-foreground hidden flex-1 items-center justify-center gap-5 text-sm font-medium md:flex">
+        <NavMenu />
       </div>
 
       <div className="flex items-center gap-2">

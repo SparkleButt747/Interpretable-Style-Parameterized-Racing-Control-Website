@@ -8,7 +8,7 @@ import remarkParse from "remark-parse";
 import remarkStringify from "remark-stringify";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
-const docsDir = path.join(process.cwd(), "contents/docs");
+const docsDir = path.join(process.cwd(), "contents/learn");
 const outputDir = path.join(process.cwd(), "public", "search-data");
 function isMdxJsxFlowElement(node) {
     return node.type === "mdxJsxFlowElement" && "name" in node;
