@@ -7,6 +7,7 @@ import RoutedLink from "@/components/markdown/link"
 import Mermaid from "@/components/markdown/mermaid"
 import Note from "@/components/markdown/note"
 import { Step, StepItem } from "@/components/markdown/step"
+import { Separator } from "@/components/ui/separator"
 
 export const components = {
   a: RoutedLink,
@@ -17,6 +18,7 @@ export const components = {
   File,
   Mermaid,
   Note,
+  Separator,
   pre: Pre,
   Step,
   StepItem,
