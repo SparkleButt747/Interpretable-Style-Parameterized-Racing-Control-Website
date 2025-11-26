@@ -4,4 +4,98 @@ description: Placeholder for discussing the intuition and capabilities unlocked 
 keywords: ["physics benefits", "controller intuition", "capabilities"]
 ---
 
-Content coming soon.
+{/* Limitations & Realism — MDX section
+   Place under: app/(learn)/introduction/setting-the-stage/limitations-and-realism.mdx
+   Replace placeholders with real components as you build them.
+*/}
+
+import { Separator } from "@/components/ui/separator";
+// import RealityMeter from "@/components/limits/RealityMeter";
+// import FailureGallery from "@/components/limits/FailureGallery";
+// import KnobSensitivity from "@/components/limits/KnobSensitivity";
+// import CalibrationChecklist from "@/components/limits/CalibrationChecklist";
+
+## What this model captures
+- Geometry & timing of path following (steer + speed)
+- Curvature → feasible speed (friction-limited)
+- Preview effects (lookahead trade-offs)
+- Simple command shaping (rate/jerk)
+- Style knobs → predictable behaviour
+
+<div className="my-4 rounded-2xl border bg-muted/20 px-5 py-4 text-sm text-muted-foreground">
+  [METER PLACEHOLDER] “Reality Meter” showing what’s included vs excluded.
+  {/* <RealityMeter /> */}
+</div>
+
+<Separator className="my-10" />
+
+## What it does not capture
+- Tyre minutiae (Pacejka, relaxation, temperature, wear)
+- Load transfer, chassis roll/pitch, aero downforce
+- Powertrain & shifting, regen blending
+- Actuator dynamics (steer/brake lag, hysteresis)
+- Perception stack (vision/SLAM)
+- Track features (banking, kerbs, bumps, wet patches)
+
+<Separator className="my-10" />
+
+## Where it breaks (expect this)
+- Snap S-bends at high μ look cleaner than reality
+- Trail-braking nuances are approximated
+- High-downforce corners are misrepresented (no aero)
+- Kerbs/roughness ignored; trajectories don’t react
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [GALLERY PLACEHOLDER] Failure cases: S-bend snap • aero corner • kerb pass.
+  {/* <FailureGallery /> */}
+</div>
+
+<Separator className="my-10" />
+
+## Why this is still the right tool
+- We’re teaching **control ideas** and **style interpretability**
+- Fast iterations, stable sims, clear cause → effect
+- Sliders produce **predictable** visual/metric deltas
+
+<Separator className="my-10" />
+
+## Sandboxing realism (guarantees)
+- Deterministic replays (fixed seeds)
+- Bounded commands \(|\delta|, |\dot\delta|, |a_x|\); jerk limited
+- Conservative, smoothed \(v_t(s)\) to avoid spikes
+
+<Separator className="my-10" />
+
+## Calibration notes
+- Check \(a_y = v^2 |\kappa|\) ≤ \(\mu g\)
+- Track **missed-apex** / **overshoot** counts
+- Compare to **MPCC-like ghost** on micro tracks
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [CHECKLIST PLACEHOLDER] Quick calibration checklist with green ticks when satisfied.
+  {/* <CalibrationChecklist /> */}
+</div>
+
+<Separator className="my-10" />
+
+## If you need more realism (future branch)
+- Add aero: \(F_z \leftarrow F_z + k v^2\); update μ\_eff
+- Add load transfer: lateral transfer reduces inside-tyre capacity
+```math
+- Add actuator lags: \(\tau_\delta \dot\delta + \delta = \delta_\text{cmd}\); \(\tau_a \dot a_x + a_x = a_{x,\text{cmd}}\)
+```
+- Swap to a **dynamic** bicycle (states \(v_x, v_y, r\), linear tyre \(F_y=C\alpha\))
+
+<Separator className="my-10" />
+
+## Plain-English disclaimer
+This simulator is a **clarity machine**. It’s great for learning preview, curvature-aware speed, and style trade-offs.  
+It is **not** a tyre model, a setup tool, or a guarantee of real-car performance.
+
+<div className="mt-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [SENSITIVITY PLACEHOLDER] Small μ/L perturbations → robustness check (plots).
+  {/* <KnobSensitivity /> */}
+</div>
+
+<br />
+

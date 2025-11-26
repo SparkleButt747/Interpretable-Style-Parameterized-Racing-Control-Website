@@ -4,4 +4,107 @@ description: Placeholder for the intuition behind MPCC and how it differs from c
 keywords: ["MPCC idea", "contouring", "racing line"]
 ---
 
-Content coming soon.
+{/* MPCC — The Idea
+   Place under: app/(learn)/mpcc/idea/page.mdx
+   Replace placeholders with real components later.
+*/}
+
+import { Separator } from "@/components/ui/separator";
+// import MPCCIdeaDiagram from "@/components/mpcc/MPCCIdeaDiagram";
+// import MPCCWeightPresets from "@/components/mpcc/MPCCWeightPresets";
+// import MPCCErrorBands from "@/components/mpcc/MPCCErrorBands";
+// import MPCCInputsPanel from "@/components/mpcc/MPCCInputsPanel";
+
+<div className="mt-2 text-base leading-7 text-muted-foreground max-w-2xl">
+  Over a short horizon, choose steering and acceleration that minimise path error, maximise progress,
+  and respect limits — by solving a small optimisation every control tick.
+</div>
+
+<Separator className="my-8" />
+
+## Concept
+
+- Minimise **contouring** \(e_\perp\) and **lag** \(e_\parallel\) errors to stay near the path  
+- Reward **progress** \(\Delta s\)  
+- Penalise input **effort** and **rates**  
+- Enforce **dynamics**, **friction**, and **actuator** limits
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [DIAGRAM PLACEHOLDER] Reference path with normal/tangent frames; e<sub>⊥</sub>, e<sub>∥</sub>; rolling horizon window.
+  {/* <MPCCIdeaDiagram /> */}
+</div>
+
+<Separator className="my-10" />
+
+## Ingredients
+
+**States (per step \(k\))**: \(\mathbf_x_k = [x_k, y_k, \psi_k, v_k]^\top\)  
+**Inputs**: \(\mathbf_u_k = [\delta_k, a_{x,k}]^\top\)
+
+**Errors (at \(s_k\))**:
+```math
+e_{\perp,k} \approx \mathbf{n}(s_k)^\top\!\big([x_k,y_k]^\top - \gamma(s_k)\big),\quad
+e_{\parallel,k} \approx \mathbf{t}(s_k)^\top\!\big([x_k,y_k]^\top - \gamma(s_k)\big).
+```
+
+**Objective (teaching surrogate)**:
+```math
+\min \sum_{k=0}^{N-1}
+\Big(
+w_c e_{\perp,k}^2 + w_\ell e_{\parallel,k}^2
++ w_u \|\mathbf{u}_k\|^2 + w_r \|\Delta \mathbf{u}_k\|^2
+- w_p\,\Delta s_k
+\Big)
+```
+
+<Separator className="my-10" />
+
+## Constraints
+
+- **Dynamics**: discretised kinematic bicycle
+```math
+- **Actuators**: \(|\delta_k| \le \delta_{\max}\), \(|\Delta \delta_k| \le \Delta \delta_{\max}\), \(|a_{x,k}| \le a_{x,\max}\)
+```
+- **Friction**: \((a_{x,k})^2 + (v_k^2 \kappa_k)^2 \le (\mu g)^2\)
+
+<Separator className="my-10" />
+
+## One control tick
+
+1) Predict & linearise about a nominal motion  
+2) Solve the QP (or similar convex step)  
+3) Apply first input \(\mathbf_u_0^\star\), shift horizon, repeat
+
+<Separator className="my-10" />
+
+## What to notice
+
+- Predictive, anticipatory behaviour (it “looks ahead”)  
+- Weight tuning changes behaviour, but **style remains implicit**  
+- Great performance; weak as a **style teaching** tool
+
+<div className="my-6 grid gap-4 md:grid-cols-3">
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+    [WEIGHTS PLACEHOLDER] A/B presets: different \(w_c,w_\ell,w_p,w_r\) → different behaviour.
+    {/* <MPCCWeightPresets /> */}
+  </div>
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground md:col-span-2">
+    [ERROR BANDS PLACEHOLDER] Contouring/lag error strips + along-track progress per segment.
+    {/* <MPCCErrorBands /> */}
+  </div>
+</div>
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [INPUTS PANEL PLACEHOLDER] Inputs and input-rate usage (smoothness indicators).
+  {/* <MPCCInputsPanel /> */}
+</div>
+
+<Separator className="my-10" />
+
+## Takeaway
+
+MPCC is a strong optimiser with **implicit** style.  
+We’ll use it as a **baseline ghost**, then switch to **Style-Parameterized** control where style is **explicit** and **predictable**.
+
+<br />
+

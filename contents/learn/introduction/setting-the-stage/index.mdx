@@ -5,3 +5,137 @@ keywords: ["driving style", "learning goals", "racing controller"]
 ---
 
 Content coming soon.
+
+{/* Setting the Stage — MDX
+   Drop into app/(learn)/introduction/setting-the-stage.mdx or similar.
+   Replace placeholders with real components later.
+*/}
+
+import { Separator } from "@/components/ui/separator";
+// import PathSchematic from "@/components/stage/PathSchematic";
+// import FrictionDonut from "@/components/stage/FrictionDonut";
+// import KinematicPlayground from "@/components/stage/KinematicPlayground";
+// import MPCCFoilTeaser from "@/components/stage/MPCCFoilTeaser";
+// import MetricsPanel from "@/components/stage/MetricsPanel";
+
+# Setting the Stage
+
+## Explaining the Problem
+
+**Task (plain):** Given a reference path and the current vehicle state, output **steering** \(\delta\) and **longitudinal** \(a_x\) every few ms to finish a lap quickly and safely.
+
+**What we command**
+- Steering \(\delta\) (rad)
+- Longitudinal \(a_x\) (m/s²) — throttle/brake
+
+**What we know (assumed)**
+- Pose & speed: \((x,y), \psi, v\)
+- Path \(\gamma(s)\) and curvature \(\kappa(s)\)
+- Grip estimate \(\mu\), actuator limits
+
+**Formal mapping**
+```math
+\pi: \{x,y,\psi,v,\gamma,\kappa,\mu\}\;\rightarrow\;\{\delta,\;a_x\}
+```
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [DIAGRAM PLACEHOLDER] Path schematic: centerline, lookahead target, car pose, labels for \(\delta\) and \(a_x\).
+  {/* <PathSchematic /> */}
+</div>
+
+We focus on control, not perception: we assume the path and state are already available so we can study **cause → effect** cleanly.
+
+<Separator className="my-10" />
+
+## Math (minimal but precise)
+
+A teaching-friendly surrogate over horizon \(T\):
+
+<Separator className="my-10" />
+
+## Assumptions & Scope
+
+**Prerequisites**
+- Kinematics & vectors; PID intuition
+- Curvature \(\kappa\); simple ODE updates
+
+**We assume we have**
+- Browser simulator with a lightweight vehicle model
+- Reference paths for simple tracks
+- Reasonable actuator & grip bounds
+
+**Scope**
+- **In:** preview/lookahead, curvature→speed, gain scheduling, smoothing/jerk, **style parameters**
+- **Out:** full MPCC math/solvers, full tyre/aero models, perception stack
+
+<Separator className="my-10" />
+
+## Physics Backbone
+
+### Kinematic Bicycle (used here)
+
+```math
+\dot{x}=v\cos(\psi+\beta),\quad
+\dot{y}=v\sin(\psi+\beta),\quad
+\dot{\psi}=\frac{v}{L}\sin\beta,\quad
+\beta=\arctan\!\Big(\frac{l_r}{L}\tan\delta\Big),\quad
+\dot{v}=a_x.
+```
+
+**Friction limit (circle):**
+```math
+(a_x)^2 + (v^2\kappa)^2 \le (\mu g)^2.
+```
+
+**Target speed from curvature (smoothed):**
+```math
+v_t(s) \approx \sqrt{\frac{\mu g}{|\kappa(s)|+\epsilon}}.
+```
+
+<div className="my-6 grid gap-4 md:grid-cols-2">
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+    [GAUGE PLACEHOLDER] Friction donut: split lateral vs longitudinal usage.
+    {/* <FrictionDonut /> */}
+  </div>
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+    [PLAYGROUND PLACEHOLDER] Kinematic playground with \(\delta,a_x\) traces.
+    {/* <KinematicPlayground /> */}
+  </div>
+</div>
+
+### Limitations & realism
+
+- No tyre relaxation, load transfer, or aero — **not** a lap-time oracle
+- Ideal for teaching preview, curvature-aware speed, and **style knobs**
+- Fast enough for live sliders and instant replays
+
+<Separator className="my-10" />
+
+## MPCC (foil)
+
+**Idea:** optimise contouring/lag errors, inputs/rates, and progress over a short horizon under model & constraints.
+
+**Implicit style:** changing **weights** changes behaviour, but mapping **weights → driving style** is indirect → great **baseline**, weak **teaching tool**.
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [TEASER PLACEHOLDER] MPCC-like ghost with two weight presets (A/B).
+  {/* <MPCCFoilTeaser /> */}
+</div>
+
+<Separator className="my-10" />
+
+## What We Measure & How You Interact
+
+**Tracks & experiments**
+- S-bend • Hairpin • Chicane
+- Metrics: lap time, max/avg lat-g, mean jerk, apex-miss flag, overshoot count
+
+**The Playground**
+- Sliders: **Apex offset**, **Entry/Exit bias**, **Risk**, **Smoothness**
+- Toggles: grip \(\mu\), lookahead \(L\), baseline vs MPCC-like ghost
+- Overlays: curvature heatmap, speed-target band, friction gauge
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [METRICS PLACEHOLDER] Metrics panel + curvature/speed overlays.
+  {/* <MetricsPanel /> */}
+</div>

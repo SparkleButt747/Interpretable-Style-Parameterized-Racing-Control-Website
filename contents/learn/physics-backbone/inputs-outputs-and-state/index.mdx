@@ -4,4 +4,124 @@ description: Placeholder for describing controller interfaces, measurable signal
 keywords: ["controller inputs", "outputs", "state"]
 ---
 
-Content coming soon.
+{/* The Dynamic Bicycle Model — MDX section
+   Place under: app/(learn)/introduction/setting-the-stage/dynamic-bicycle-model.mdx
+   Replace placeholders with real components as you build them.
+*/}
+
+import { Separator } from "@/components/ui/separator";
+// import BicycleDiagram from "@/components/physics/BicycleDiagram";
+// import FrictionDonut from "@/components/physics/FrictionDonut";
+// import SpeedBandStrip from "@/components/physics/SpeedBandStrip";
+// import PlantParamsCard from "@/components/physics/PlantParamsCard";
+// import Playground from "@/components/physics/Playground";
+
+
+## Why a single-track model
+Fast, stable, and legible. It exposes how **steering**, **speed**, and **yaw** interact—perfect for teaching style and curvature–speed trade-offs.
+
+<Separator className="my-8" />
+
+## Plant used in this course (sim at 60–120 Hz)
+
+**State:** \((x,y,\psi,v)\)  
+**Inputs:** steering \(\delta\), longitudinal \(a_x\)  
+**Params:** \(L=l_f+l_r\)
+
+```math
+\dot{x}=v\cos(\psi+\beta),\quad
+\dot{y}=v\sin(\psi+\beta),\quad
+\dot{\psi}=\frac{v}{L}\sin\beta,\quad
+\beta=\arctan\!\Big(\frac{l_r}{L}\tan\delta\Big),\quad
+\dot{v}=a_x.
+```
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [DIAGRAM PLACEHOLDER] Single-track geometry: \(L\), \(l_f\), \(l_r\), \(\delta\), \(\psi\), \(\beta\).
+  {/* <BicycleDiagram /> */}
+</div>
+
+<div className="my-4 rounded-2xl border bg-muted/20 px-5 py-4 text-sm text-muted-foreground">
+  [CARD PLACEHOLDER] Typical parameters & sim step (e.g., \(L=2.6\) m, \(l_f=1.1\) m, \(l_r=1.5\) m, \(dt=0.016\) s).
+  {/* <PlantParamsCard /> */}
+</div>
+
+<Separator className="my-10" />
+
+## Lateral demand, friction, feasible speed
+
+**Friction circle:**
+\[
+(a_x)^2 + (v^2\kappa)^2 \le (\mu g)^2.
+\]
+
+**Curvature → target speed (then smoothed):**
+```math
+v_t(s) \approx \sqrt{\frac{\mu g}{|\kappa(s)|+\epsilon}}.
+```
+
+<div className="my-6 grid gap-4 md:grid-cols-2">
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+    [GAUGE PLACEHOLDER] Friction donut (lateral vs longitudinal share).
+    {/* <FrictionDonut /> */}
+  </div>
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+    [STRIP PLACEHOLDER] Track with curvature heatmap + target-speed band vs actual speed.
+    {/* <SpeedBandStrip /> */}
+  </div>
+</div>
+
+<Separator className="my-10" />
+
+## Interface to the controller
+
+**Controller sees**
+- \((x,y,\psi,v)\), local \(\kappa(s)\), lookahead index/arc-length
+```math
+- Limits: \(\delta_{\max}, \dot\delta_{\max}, a_{x,\max}\), grip \(\mu\)
+```
+
+**Controller returns**
+- \(\delta\) (steer), \(a_x\) (longitudinal)
+
+**Telemetry**
+- Trajectory, speed trace, lateral-g \(= v^2 |\kappa|/g\), jerk, apex hit/miss, overshoot
+
+<Separator className="my-10" />
+
+## Command shaping
+
+- Clamp \(|\dot\delta|\) or low-pass \(\delta\)  
+- Limit \(|\dot a_x|\) (jerk), especially near \(v_t(s)\) changes  
+- Optional: blend lookahead target for S-bend stability
+
+<Separator className="my-10" />
+
+## Optional: “dynamic” flavor (reference only)
+
+Small-angle tyre forces \(F_y \approx C\,\alpha\) with slip angles \(\alpha_f,\alpha_r\) add \((v_x,v_y,r)\) dynamics and parameters \((C_f,C_r)\).  
+We don’t use this live—slower, less interpretable for novices—but it explains where \(\beta\) surrogates come from.
+
+<Separator className="my-10" />
+
+## Playground (poke it)
+
+- **Tracks:** S-bend • Hairpin • Chicane  
+- **Overlays:** target-speed band, friction donut, heading-error arrow  
+- **Knobs:** \(\mu\), lookahead \(L\), style: apex offset, entry/exit bias, risk, smoothness  
+- **Metrics:** lap time, max/avg lat-g, mean jerk, overshoot, apex-miss
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [PLAYGROUND PLACEHOLDER] Live sim + sliders + overlays + replay controls.
+  {/* <Playground /> */}
+</div>
+
+<Separator className="my-10" />
+
+## Limitations (by design)
+
+- No tyre relaxation, load transfer, aero, drivetrain  
+- Not a lap-time oracle; **is** a clarity machine for preview/curvature/smoothness/style
+
+<br />
+

@@ -4,4 +4,99 @@ description: Placeholder for detailing MPCC tuning weights and constraint interp
 keywords: ["weights", "constraints", "mpcc tuning"]
 ---
 
-Content coming soon.
+{/* MPCC — Weights & Constraints
+   Place under: app/(learn)/mpcc/weights-and-constraints/page.mdx
+   Replace placeholders with real components later.
+*/}
+
+import { Separator } from "@/components/ui/separator";
+// import WeightTable from "@/components/mpcc/WeightTable";
+// import ConstraintPanel from "@/components/mpcc/ConstraintPanel";
+// import PresetSwitcher from "@/components/mpcc/PresetSwitcher";
+// import FailureSignatures from "@/components/mpcc/FailureSignatures";
+// import RatePlots from "@/components/shared/RatePlots";
+
+# MPCC — Weights & Constraints
+
+## What the weights do
+
+> Style emerges **implicitly** from weights. Useful, but not one-knob-one-effect.
+
+<div className="my-4 rounded-2xl border bg-muted/20 px-5 py-4 text-sm text-muted-foreground">
+  [TABLE PLACEHOLDER] Qualitative map of weights → behaviour.
+  {/* <WeightTable /> */}
+</div>
+
+- \(w_c\): hug path (lateral adherence)  
+- \(w_\ell\): don’t “lag” (keep up along track)  
+- \(w_p\): push progress  
+- \(w_u\): penalise big inputs  
+- \(w_r\): penalise input **rates** (smoothness)
+
+<Separator className="my-10" />
+
+## Constraints you’ll feel
+
+- **Dynamics** (kinematic bicycle, discretised)  
+- **Actuators:** \(|\delta|, |\Delta\delta|, |a_x|\) bounded  
+- **Friction:** \((a_x)^2 + (v^2\kappa)^2 \le (\mu g)^2\)  
+- **Track limits** (optional soft/hard bounds)
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [PANEL PLACEHOLDER] Constraint toggles with short “how it feels” tooltips.
+  {/* <ConstraintPanel /> */}
+</div>
+
+<Separator className="my-10" />
+
+## A minimal tuning recipe
+
+1) Start neutral (mid \(w_c,w_\ell\); low \(w_u,w_r\); mid \(w_p\))  
+2) Raise \(w_c\) to fix adherence (watch for chatter)  
+3) Increase \(w_p\) until apex slip appears → back off 10–20%  
+4) Lift \(w_r\) (then a touch of \(w_u\)) to tame jerk  
+5) Rebalance \(w_\ell\) for straights vs corners
+
+<div className="my-6 grid gap-4 md:grid-cols-3">
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+    [PRESET A] Adherent & Smooth — high \(w_c,w_r\), low-mid \(w_p\)
+    {/* <PresetSwitcher preset="A" /> */}
+  </div>
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+    [PRESET B] Pushy Progress — high \(w_p\), mid \(w_c\), low-mid \(w_r\)
+    {/* <PresetSwitcher preset="B" /> */}
+  </div>
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+    [PRESET C] Balanced Quali — mid-high \(w_c\), mid \(w_\ell\), mid-high \(w_p\), mid \(w_r\)
+    {/* <PresetSwitcher preset="C" /> */}
+  </div>
+</div>
+
+<Separator className="my-10" />
+
+## Failure signatures (recognise them fast)
+
+- **Over-contouring:** oscillatory steering; saw-tooth \(\Delta\delta\); progress stalls  
+- **Over-progress:** missed-apex flags ↑; friction donut saturates; lat-g spikes mid-corner  
+- **Over-smooth:** pretty inputs; late apex; lap-time loss
+
+<div className="my-6 grid gap-4 md:grid-cols-2">
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+    [GALLERY PLACEHOLDER] Three short clips: over-contour / over-progress / over-smooth.
+    {/* <FailureSignatures /> */}
+  </div>
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+    [PLOTS PLACEHOLDER] Input & rate plots (δ, a<sub>x</sub>, Δδ, Δa<sub>x</sub>) for each failure.
+    {/* <RatePlots /> */}
+  </div>
+</div>
+
+<Separator className="my-10" />
+
+## Why this section exists
+
+You’ll **feel** how weights shift behaviour, but you won’t get an explicit “late-apex knob.”  
+That opacity is the point of the contrast with **Style-Parameterized** control next.
+
+<br />
+

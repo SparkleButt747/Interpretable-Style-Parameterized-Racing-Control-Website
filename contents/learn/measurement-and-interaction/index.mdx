@@ -4,4 +4,146 @@ description: Placeholder for the measurement philosophy and interaction tools us
 keywords: ["measurement", "interaction", "telemetry"]
 ---
 
-Content coming soon.
+{/* What We Measure & Interact With — MDX
+   Place under: app/(learn)/measure/page.mdx or app/(learn)/introduction/what-we-measure.mdx
+   Replace placeholders with real components later.
+*/}
+
+import { Separator } from "@/components/ui/separator";
+// import TrackSelector from "@/components/measure/TrackSelector";
+// import OverlayToggles from "@/components/measure/OverlayToggles";
+// import MetricsPanel from "@/components/measure/MetricsPanel";
+// import GhostControls from "@/components/measure/GhostControls";
+// import ExperimentCards from "@/components/measure/ExperimentCards";
+// import CompareRuns from "@/components/measure/CompareRuns";
+// import ExportBar from "@/components/measure/ExportBar";
+
+# What We Measure & Interact With
+
+## Tracks
+
+- **S-bend** — reveal oscillation with small lookahead  
+- **Hairpin** — apex timing & entry/exit bias  
+- **Chicane** — progress vs smoothness trade-off
+
+<div className="my-4 rounded-2xl border bg-muted/20 px-5 py-4 text-sm text-muted-foreground">
+  [TRACK SELECTOR PLACEHOLDER]
+  {/* <TrackSelector /> */}
+</div>
+
+<Separator className="my-8" />
+
+## Overlays
+
+- Curvature heatmap • Target-speed band vs actual • Friction donut  
+- Error traces \(e_\perp, e_\parallel\) • Command plots \(\delta, a_x\) and rates
+
+<div className="my-4 rounded-2xl border bg-muted/20 px-5 py-4 text-sm text-muted-foreground">
+  [OVERLAY TOGGLES PLACEHOLDER]
+  {/* <OverlayToggles /> */}
+</div>
+
+<Separator className="my-10" />
+
+## Primary Metrics
+
+- **Lap time** \(T_\text{lap}\)  
+- **Lateral g (max/avg)** \(a_y = v^2|\kappa|/g\)  
+- **Mean jerk** \(\bar{j} = \frac{1}{T}\sum |\Delta a_x|/dt\)  
+- **RMS contouring error** \(\text{RMSE}(e_\perp)\)  
+- **Apex hit/miss** (per corner) • **Overshoot count**  
+```math
+- **Control effort** \(\sum \|\mathbf{u}\|^2 dt\) • **Rate penalty** \(\sum \|\dot{\mathbf{u}}\|^2 dt\)  
+- **Friction usage** \(\max \frac{\sqrt{a_x^2+(v^2\kappa)^2}}{\mu g}\) • **Off-track time**
+```
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [METRICS PANEL PLACEHOLDER] Sparklines + badges (pass/fail for sanity checks).
+  {/* <MetricsPanel /> */}
+</div>
+
+<Separator className="my-10" />
+
+## Head-to-Head (Ghost Races)
+
+- Opponents: **Baseline** preview, **MPCC-like** ghost  
+- **Scoring**:
+  - +3 (≥1.0 s faster), +2 (≥0.5 s), +1 (≥0.2 s) on \(T_\text{lap}\)
+  - −1 if \(\text{RMSE}(e_\perp) > 0.6\) m or any off-track
+  - −1 if mean jerk > threshold (track-dependent)
+  - Tie-break: lower **peak friction usage**
+
+<div className="my-4 rounded-2xl border bg-muted/20 px-5 py-4 text-sm text-muted-foreground">
+  [GHOST CONTROLS PLACEHOLDER] Choose opponent, start race, view score, leaderboard.
+  {/* <GhostControls /> */}
+</div>
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [COMPARE RUNS PLACEHOLDER] Split A/B or flicker compare; overlay deltas.
+  {/* <CompareRuns /> */}
+</div>
+
+<Separator className="my-10" />
+
+## Interactions
+
+- **Grip \(\mu\)** (dry/wet), **Lookahead \(L\)** slider  
+- **Style-Param sliders:** Apex offset, Entry/Exit bias, Risk, Smoothness  
+- **Controller:** Style-Param vs **MPCC-like**; presets A/B/C for MPCC  
+- **Overlays:** curvature • speed band • friction • errors • commands  
+- **Replay:** scrubber, speed 0.5×/1×/2×, frame-by-frame
+
+<Separator className="my-10" />
+
+## Experiments
+
+<div className="grid gap-4 md:grid-cols-2">
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6">
+    <h4 className="mb-2 font-semibold">1) Lookahead vs Oscillation (S-bend)</h4>
+    <p className="text-sm text-muted-foreground">
+      Sweep \(L\); record overshoot count & RMSE\(e_\perp\). Plot vs \(L\).
+    </p>
+  </div>
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6">
+    <h4 className="mb-2 font-semibold">2) Style Knobs (Hairpin)</h4>
+    <p className="text-sm text-muted-foreground">
+      Vary apex offset & entry/exit bias; measure lap time, apex hits, lat-g peak.
+    </p>
+  </div>
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6">
+    <h4 className="mb-2 font-semibold">3) Progress vs Smoothness (Chicane)</h4>
+    <p className="text-sm text-muted-foreground">
+      Trade \(w_p\) vs Smoothness; chart lap time vs mean jerk (Pareto curve).
+    </p>
+  </div>
+  <div className="rounded-2xl border bg-muted/20 px-5 py-6">
+    <h4 className="mb-2 font-semibold">4) Low-μ Robustness</h4>
+    <p className="text-sm text-muted-foreground">
+      Drop μ; minimal re-tune; note friction usage and off-track events.
+    </p>
+  </div>
+</div>
+
+{/* <ExperimentCards /> */}
+
+<Separator className="my-10" />
+
+## Export & Reproducibility
+
+- **Export CSV:** \(t,x,y,\psi,v,\kappa,\delta,a_x,e_\perp,e_\parallel\)  
+- **Share link:** preset hash (track, μ, \(L\), knobs/weights, seed)  
+- **Seed-fixed** sims for identical repeats
+
+<div className="my-4 rounded-2xl border bg-muted/20 px-5 py-4 text-sm text-muted-foreground">
+  [EXPORT BAR PLACEHOLDER] Download CSV • Copy share link.
+  {/* <ExportBar /> */}
+</div>
+
+<Separator className="my-10" />
+
+## Sanity Checks
+
+- \(a_y \le \mu g\) everywhere (or flag)  
+- ≤ N apex misses on Hairpin  
+- Mean jerk below track threshold unless “Aggressive” selected
+
+<br />

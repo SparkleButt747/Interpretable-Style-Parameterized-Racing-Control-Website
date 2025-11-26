@@ -4,4 +4,110 @@ description: Placeholder for explaining the model predictive contouring control 
 keywords: ["MPCC", "model predictive control", "baseline"]
 ---
 
-Content coming soon.
+{/* MPCC — Main Introduction
+   Place under: app/(learn)/mpcc/introduction/page.mdx
+   Replace placeholders with real components later.
+*/}
+
+import { Separator } from "@/components/ui/separator";
+// import MPCCDiagram from "@/components/mpcc/MPCCDiagram";
+// import WeightPlayground from "@/components/mpcc/WeightPlayground";
+// import ErrorBands from "@/components/mpcc/ErrorBands";
+// import GhostRace from "@/components/shared/GhostRace";
+
+
+<div className="mt-2 text-base leading-7 text-muted-foreground max-w-2xl">
+  Optimise over a short horizon so the car stays near the path, makes progress,
+  and respects limits. Powerful, predictive, and standard — but driving <em>style</em>
+  lives implicitly in weights and constraints.
+</div>
+
+<Separator className="my-8" />
+
+## The idea at a glance
+
+- **State:** \([x,y,\psi,v]\), **Input:** \([\delta,a_x]\)  
+- **Errors:** lateral (**contouring**) and along-track (**lag**) vs reference  
+- **Goal:** small errors, smooth/feasible inputs, **max progress**  
+- **Method:** solve an optimisation every tick
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [DIAGRAM PLACEHOLDER] Path, normal/tangent frames, e<sub>⊥</sub> & e<sub>∥</sub>, rolling horizon.
+  {/* <MPCCDiagram /> */}
+</div>
+
+## Objective (teaching surrogate)
+
+```math
+\min \sum_{k=0}^{N-1}\big(
+w_c e_{\perp,k}^2 + w_\ell e_{\parallel,k}^2 +
+w_u\|\mathbf{u}_k\|^2 + w_r\|\Delta\mathbf{u}_k\|^2
+- w_p\,\Delta s_k
+\big)
+```
+
+- \(w_c,w_\ell\): track adherence
+- \(w_p\): progress reward
+- \(w_u,w_r\): effort & smoothness
+
+<Separator className="my-10" />
+
+## Constraints you’ll see
+
+- **Dynamics** (kinematic bicycle, discretised)
+- **Actuators:** \(|\delta|, |\Delta\delta|, |a_x|\) bounded
+- **Friction:** \((a_x)^2 + (v^2\kappa)^2 \le (\mu g)^2\)
+
+<Separator className="my-10" />
+
+## How it runs each tick
+
+1) Linearise around a predicted motion  
+2) Solve a QP/SQP step  
+3) Apply first input, shift horizon, repeat
+
+<Separator className="my-10" />
+
+## Strengths & weaknesses
+
+**Strengths**
+- Competitive lap times, handles limits
+- Predictive, anticipatory behaviour
+
+**Weaknesses (for teaching style)**
+- Style is **implicit** in weights/constraints
+- Many coupled knobs; hard to **predict** effects
+- Compute & tuning overhead
+
+<Separator className="my-10" />
+
+## Why it’s here (and how we’ll use it)
+
+We’ll use an **MPCC-like ghost** (surrogate weights) as a strong baseline.  
+Then we’ll switch to **Style-Parameterized** sliders where **apex offset**, **entry/exit bias**, **risk**, and **smoothness** are explicit and predictable.
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [WEIGHT PLAYGROUND PLACEHOLDER] Two presets (A/B): see behaviour change with weights.
+  {/* <WeightPlayground /> */}
+</div>
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [ERROR BANDS PLACEHOLDER] Contouring/lag error strips along the lap + input/rate usage.
+  {/* <ErrorBands /> */}
+</div>
+
+<div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
+  [GHOST RACE PLACEHOLDER] MPCC-like ghost vs Style-Param on S-bend / Hairpin / Chicane.
+  {/* <GhostRace opponent="mpcc" /> */}
+</div>
+
+<Separator className="my-10" />
+
+## Takeaway
+
+MPCC is a **great optimiser** with **opaque style**.  
+Style-Parameterized control is a **clear teacher** with **explicit style**.
+Pick the tool that matches your goal.
+
+<br />
+
