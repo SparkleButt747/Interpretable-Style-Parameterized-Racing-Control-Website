@@ -18,24 +18,22 @@ import { Separator } from "@/components/ui/separator";
 # Assumptions & Scope
 
 ## Prerequisites
-- Basic kinematics & vectors \((x,y,\psi,v)\)
-- Curvature \(\kappa\) on a 2D path; tighter bend ⇒ lower feasible speed
+- Basic kinematics & vectors $(x,y,\psi,v)$
+- Curvature $\kappa$ on a 2D path; tighter bend ⇒ lower feasible speed
 - PID intuition (proportional control, gain scheduling)
 - Simple ODE stepping (Euler/RK)
 
 <div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
-  [CARD PLACEHOLDER] Visual recap of \((x,y,\psi,v)\) and \(\kappa\).
+  [CARD PLACEHOLDER] Visual recap of $(x,y,\psi,v)$ and $\kappa$.
   {/* <PrereqCard /> */}
 </div>
 
 <Separator className="my-10" />
 
 ## What we assume we already have
-- Reference path \(\gamma(s)\) with curvature \(\kappa(s)\) (centerline from cones)
-- State estimate \((x,y,\psi,v)\) each control tick
-```math
-- Grip estimate \(\mu\) and actuator limits \((\delta_{\max}, \dot\delta_{\max}, a_{x,\max})\)
-```
+- Reference path $\gamma(s)$ with curvature $\kappa(s)$ (centerline from cones)
+- State estimate $(x,y,\psi,v)$ each control tick
+- Grip estimate $\mu$ and actuator limits $(\delta_{\max}, \dot\delta_{\max}, a_{x,\max})$
 - Lightweight browser simulator (kinematic bicycle + friction-limited target speed)
 - Three tracks: **S-bend**, **Hairpin**, **Chicane**
 
@@ -97,7 +95,7 @@ import { Separator } from "@/components/ui/separator";
 
 - **Primary:** can you **predict** the trajectory/metrics from the style settings?
 - **Secondary:** metrics vs baselines (lap time, jerk, apex adherence)
-- **Tertiary:** robustness under small \(\mu\) and lookahead \(L\) perturbations
+- **Tertiary:** robustness under small $\mu$ and lookahead $L$ perturbations
 
 <div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
   [PANEL PLACEHOLDER] Metrics legend + example values from a baseline run.
@@ -108,9 +106,9 @@ import { Separator } from "@/components/ui/separator";
 
 ## Reproducibility & knobs
 
-- Seed-fixed demos: same start, same \(\mu\), same \(L\)
+- Seed-fixed demos: same start, same $\mu$, same $L$
 - **Sliders:** Apex offset, Entry/Exit bias, Risk, Smoothness
-- **Toggles:** grip \(\mu\), lookahead \(L\), Baseline vs MPCC-like ghost
+- **Toggles:** grip $\mu$, lookahead $L$, Baseline vs MPCC-like ghost
 - **Overlays:** curvature heatmap, speed band, friction “donut”, error traces
 
 <div className="mt-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">

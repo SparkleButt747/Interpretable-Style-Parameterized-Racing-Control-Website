@@ -24,8 +24,8 @@ import { Separator } from "@/components/ui/separator";
 
 ## Concept
 
-- Minimise **contouring** \(e_\perp\) and **lag** \(e_\parallel\) errors to stay near the path  
-- Reward **progress** \(\Delta s\)  
+- Minimise **contouring** $e_\perp$ and **lag** $e_\parallel$ errors to stay near the path  
+- Reward **progress** $\Delta s$  
 - Penalise input **effort** and **rates**  
 - Enforce **dynamics**, **friction**, and **actuator** limits
 
@@ -38,10 +38,10 @@ import { Separator } from "@/components/ui/separator";
 
 ## Ingredients
 
-**States (per step \(k\))**: \(\mathbf_x_k = [x_k, y_k, \psi_k, v_k]^\top\)  
-**Inputs**: \(\mathbf_u_k = [\delta_k, a_{x,k}]^\top\)
+**States (per step $k$)**: $\mathbf_x_k = [x_k, y_k, \psi_k, v_k]^\top$  
+**Inputs**: $\mathbf_u_k = [\delta_k, a_{x,k}]^\top$
 
-**Errors (at \(s_k\))**:
+**Errors (at $s_k$)**:
 ```math
 e_{\perp,k} \approx \mathbf{n}(s_k)^\top\!\big([x_k,y_k]^\top - \gamma(s_k)\big),\quad
 e_{\parallel,k} \approx \mathbf{t}(s_k)^\top\!\big([x_k,y_k]^\top - \gamma(s_k)\big).
@@ -62,10 +62,8 @@ w_c e_{\perp,k}^2 + w_\ell e_{\parallel,k}^2
 ## Constraints
 
 - **Dynamics**: discretised kinematic bicycle
-```math
-- **Actuators**: \(|\delta_k| \le \delta_{\max}\), \(|\Delta \delta_k| \le \Delta \delta_{\max}\), \(|a_{x,k}| \le a_{x,\max}\)
-```
-- **Friction**: \((a_{x,k})^2 + (v_k^2 \kappa_k)^2 \le (\mu g)^2\)
+- **Actuators**: $|\delta_k| \le \delta_{\max}$, $|\Delta \delta_k| \le \Delta \delta_{\max}$, $|a_{x,k}| \le a_{x,\max}$
+- **Friction**: $(a_{x,k})^2 + (v_k^2 \kappa_k)^2 \le (\mu g)^2$
 
 <Separator className="my-10" />
 
@@ -73,7 +71,7 @@ w_c e_{\perp,k}^2 + w_\ell e_{\parallel,k}^2
 
 1) Predict & linearise about a nominal motion  
 2) Solve the QP (or similar convex step)  
-3) Apply first input \(\mathbf_u_0^\star\), shift horizon, repeat
+3) Apply first input $\mathbf_u_0^\star$, shift horizon, repeat
 
 <Separator className="my-10" />
 
@@ -85,7 +83,7 @@ w_c e_{\perp,k}^2 + w_\ell e_{\parallel,k}^2
 
 <div className="my-6 grid gap-4 md:grid-cols-3">
   <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
-    [WEIGHTS PLACEHOLDER] A/B presets: different \(w_c,w_\ell,w_p,w_r\) → different behaviour.
+    [WEIGHTS PLACEHOLDER] A/B presets: different $w_c,w_\ell,w_p,w_r$ → different behaviour.
     {/* <MPCCWeightPresets /> */}
   </div>
   <div className="rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground md:col-span-2">
