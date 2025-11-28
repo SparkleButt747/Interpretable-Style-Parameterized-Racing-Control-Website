@@ -61,13 +61,13 @@ import { Separator } from "@/components/ui/separator";
 
 ## Sandboxing realism (guarantees)
 - Deterministic replays (fixed seeds)
-- Bounded commands \(|\delta|, |\dot\delta|, |a_x|\); jerk limited
-- Conservative, smoothed \(v_t(s)\) to avoid spikes
+- Bounded commands $|\delta|, |\dot\delta|, |a_x|$; jerk limited
+- Conservative, smoothed $v_t(s)$ to avoid spikes
 
 <Separator className="my-10" />
 
 ## Calibration notes
-- Check \(a_y = v^2 |\kappa|\) ≤ \(\mu g\)
+- Check $a_y = v^2 |\kappa|$ ≤ $\mu g$
 - Track **missed-apex** / **overshoot** counts
 - Compare to **MPCC-like ghost** on micro tracks
 
@@ -79,12 +79,10 @@ import { Separator } from "@/components/ui/separator";
 <Separator className="my-10" />
 
 ## If you need more realism (future branch)
-- Add aero: \(F_z \leftarrow F_z + k v^2\); update μ\_eff
+- Add aero: $F_z \leftarrow F_z + k v^2$; update μ\_eff
 - Add load transfer: lateral transfer reduces inside-tyre capacity
-```math
-- Add actuator lags: \(\tau_\delta \dot\delta + \delta = \delta_\text{cmd}\); \(\tau_a \dot a_x + a_x = a_{x,\text{cmd}}\)
-```
-- Swap to a **dynamic** bicycle (states \(v_x, v_y, r\), linear tyre \(F_y=C\alpha\))
+- Add actuator lags: $\tau_\delta \dot\delta + \delta = \delta_\text{cmd}$; $\tau_a \dot a_x + a_x = a_{x,\text{cmd}}$
+- Swap to a **dynamic** bicycle (states $v_x, v_y, r$, linear tyre $F_y=C\alpha$)
 
 <Separator className="my-10" />
 

@@ -26,7 +26,7 @@ import { Separator } from "@/components/ui/separator";
 
 ## The idea at a glance
 
-- **State:** \([x,y,\psi,v]\), **Input:** \([\delta,a_x]\)  
+- **State:** $[x,y,\psi,v]$, **Input:** $[\delta,a_x]$  
 - **Errors:** lateral (**contouring**) and along-track (**lag**) vs reference  
 - **Goal:** small errors, smooth/feasible inputs, **max progress**  
 - **Method:** solve an optimisation every tick
@@ -46,17 +46,17 @@ w_u\|\mathbf{u}_k\|^2 + w_r\|\Delta\mathbf{u}_k\|^2
 \big)
 ```
 
-- \(w_c,w_\ell\): track adherence
-- \(w_p\): progress reward
-- \(w_u,w_r\): effort & smoothness
+- $w_c,w_\ell$: track adherence
+- $w_p$: progress reward
+- $w_u,w_r$: effort & smoothness
 
 <Separator className="my-10" />
 
 ## Constraints you’ll see
 
 - **Dynamics** (kinematic bicycle, discretised)
-- **Actuators:** \(|\delta|, |\Delta\delta|, |a_x|\) bounded
-- **Friction:** \((a_x)^2 + (v^2\kappa)^2 \le (\mu g)^2\)
+- **Actuators:** $|\delta|, |\Delta\delta|, |a_x|$ bounded
+- **Friction:** $(a_x)^2 + (v^2\kappa)^2 \le (\mu g)^2$
 
 <Separator className="my-10" />
 

@@ -34,30 +34,30 @@ import { Separator } from "@/components/ui/separator";
 
 ## Measurements we log
 
-- Lap time \(T_\text{lap}\), RMSE\(e_\perp\), max/avg lat-g \(a_y\)  
-- Mean jerk (from \(\dot a_x\)), control effort, rate penalty  
+- Lap time $T_\text{lap}$, $\text{RMSE}(e_\perp)$, max/avg lat-g $a_y$
+- Mean jerk (from $\dot a_x$), control effort, rate penalty
 - Apex hits/misses, overshoot count, off-track time  
-- Peak friction usage, seed, μ, \(L\), style/weight presets
+- Peak friction usage, seed, μ, $L$, style/weight presets
 
 <Separator className="my-10" />
 
 ## Experiments (guided)
 
 ### 1) Lookahead vs Oscillation — *S-bend*
-- **Do this:** Sweep \(L=2..20\) m; record RMSE\(e_\perp\), overshoot, \(T_\text{lap}\).  
-- **Expect:** small \(L\) oscillates; mid \(L\) stabilises; large \(L\) sluggish.
+- **Do this:** Sweep $L=2..20$ m; record $\text{RMSE}(e_\perp)$, overshoot, $T_\text{lap}$.
+- **Expect:** small $L$ oscillates; mid $L$ stabilises; large $L$ sluggish.
 
 ### 2) Style Knobs & Apex Timing — *Hairpin*
-- **Do this:** Vary Apex offset \([-2, +2]\) m and Entry/Exit bias \([-1, +1]\).  
+- **Do this:** Vary Apex offset $[-2, +2]$ m and Entry/Exit bias $[-1, +1]$.  
 - **Expect:** later apex (+offset) → better exit; entry-bias helps rotation but hurts exit.
 
 ### 3) Progress vs Smoothness Pareto — *Chicane*
-- **Do this:** sweep \(w_p\) vs Smoothness; log \(T_\text{lap}\), mean jerk; plot frontier.  
+- **Do this:** sweep $w_p$ vs Smoothness; log $T_\text{lap}$, mean jerk; plot frontier.  
 - **Expect:** clear Pareto curve; aggressive settings buy small time for large jerk.
 
 ### 4) Low-μ Robustness — *All tracks*
-- **Do this:** μ: dry→wet; minimal re-tune (↓Risk, ↑Smoothness).  
-- **Expect:** friction peaks drop $1 off-tracks gone modest lap-time tax
+- **Do this:** μ: dry→wet; minimal re-tune (↓Risk, ↑Smoothness).
+- **Expect:** friction peaks drop; off-tracks go away with a modest lap-time tax
 
 ### 5) Controller Contrast (Ghost Race) — *Chicane*
 - **Do this:** MPCC-like preset B vs Style-Param tuned late-apex/exit.  
@@ -72,8 +72,8 @@ import { Separator } from "@/components/ui/separator";
 
 ## Controls & Overlays
 
-- **Controls:** μ, \(L\), Style sliders (Apex offset, Entry/Exit bias, Risk, Smoothness), Controller (Style-Param / MPCC-like), MPCC presets A/B/C  
-- **Overlays:** curvature heatmap, speed band, friction donut, \(e_\perp/e_\parallel\) traces, inputs & rates  
+- **Controls:** μ, $L$, Style sliders (Apex offset, Entry/Exit bias, Risk, Smoothness), Controller (Style-Param / MPCC-like), MPCC presets A/B/C  
+- **Overlays:** curvature heatmap, speed band, friction donut, $e_\perp/e_\parallel$ traces, inputs & rates  
 - **Run tools:** seed lock, replay scrubber, compare A/B, export CSV, share link
 
 <div className="my-4 grid gap-4 md:grid-cols-2">

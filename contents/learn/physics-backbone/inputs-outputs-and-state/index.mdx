@@ -24,9 +24,9 @@ Fast, stable, and legible. It exposes how **steering**, **speed**, and **yaw** i
 
 ## Plant used in this course (sim at 60–120 Hz)
 
-**State:** \((x,y,\psi,v)\)  
-**Inputs:** steering \(\delta\), longitudinal \(a_x\)  
-**Params:** \(L=l_f+l_r\)
+**State:** $(x,y,\psi,v)$  
+**Inputs:** steering $\delta$, longitudinal $a_x$  
+**Params:** $L=l_f+l_r$
 
 ```math
 \dot{x}=v\cos(\psi+\beta),\quad
@@ -37,12 +37,12 @@ Fast, stable, and legible. It exposes how **steering**, **speed**, and **yaw** i
 ```
 
 <div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
-  [DIAGRAM PLACEHOLDER] Single-track geometry: \(L\), \(l_f\), \(l_r\), \(\delta\), \(\psi\), \(\beta\).
+  [DIAGRAM PLACEHOLDER] Single-track geometry: $L$, $l_f$, $l_r$, $\delta$, $\psi$, $\beta$.
   {/* <BicycleDiagram /> */}
 </div>
 
 <div className="my-4 rounded-2xl border bg-muted/20 px-5 py-4 text-sm text-muted-foreground">
-  [CARD PLACEHOLDER] Typical parameters & sim step (e.g., \(L=2.6\) m, \(l_f=1.1\) m, \(l_r=1.5\) m, \(dt=0.016\) s).
+  [CARD PLACEHOLDER] Typical parameters & sim step (e.g., $L=2.6$ m, $l_f=1.1$ m, $l_r=1.5$ m, $dt=0.016$ s).
   {/* <PlantParamsCard /> */}
 </div>
 
@@ -51,9 +51,9 @@ Fast, stable, and legible. It exposes how **steering**, **speed**, and **yaw** i
 ## Lateral demand, friction, feasible speed
 
 **Friction circle:**
-\[
+$$
 (a_x)^2 + (v^2\kappa)^2 \le (\mu g)^2.
-\]
+$$
 
 **Curvature → target speed (then smoothed):**
 ```math
@@ -76,31 +76,29 @@ v_t(s) \approx \sqrt{\frac{\mu g}{|\kappa(s)|+\epsilon}}.
 ## Interface to the controller
 
 **Controller sees**
-- \((x,y,\psi,v)\), local \(\kappa(s)\), lookahead index/arc-length
-```math
-- Limits: \(\delta_{\max}, \dot\delta_{\max}, a_{x,\max}\), grip \(\mu\)
-```
+- $(x,y,\psi,v)$, local $\kappa(s)$, lookahead index/arc-length
+- Limits: $\delta_{\max}, \dot\delta_{\max}, a_{x,\max}$, grip $\mu$
 
 **Controller returns**
-- \(\delta\) (steer), \(a_x\) (longitudinal)
+- $\delta$ (steer), $a_x$ (longitudinal)
 
 **Telemetry**
-- Trajectory, speed trace, lateral-g \(= v^2 |\kappa|/g\), jerk, apex hit/miss, overshoot
+- Trajectory, speed trace, lateral-g $= v^2 |\kappa|/g$, jerk, apex hit/miss, overshoot
 
 <Separator className="my-10" />
 
 ## Command shaping
 
-- Clamp \(|\dot\delta|\) or low-pass \(\delta\)  
-- Limit \(|\dot a_x|\) (jerk), especially near \(v_t(s)\) changes  
+- Clamp $|\dot\delta|$ or low-pass $\delta$  
+- Limit $|\dot a_x|$ (jerk), especially near $v_t(s)$ changes  
 - Optional: blend lookahead target for S-bend stability
 
 <Separator className="my-10" />
 
 ## Optional: “dynamic” flavor (reference only)
 
-Small-angle tyre forces \(F_y \approx C\,\alpha\) with slip angles \(\alpha_f,\alpha_r\) add \((v_x,v_y,r)\) dynamics and parameters \((C_f,C_r)\).  
-We don’t use this live—slower, less interpretable for novices—but it explains where \(\beta\) surrogates come from.
+Small-angle tyre forces $F_y \approx C\,\alpha$ with slip angles $\alpha_f,\alpha_r$ add $(v_x,v_y,r)$ dynamics and parameters $(C_f,C_r)$.  
+We don’t use this live—slower, less interpretable for novices—but it explains where $\beta$ surrogates come from.
 
 <Separator className="my-10" />
 
@@ -108,7 +106,7 @@ We don’t use this live—slower, less interpretable for novices—but it expla
 
 - **Tracks:** S-bend • Hairpin • Chicane  
 - **Overlays:** target-speed band, friction donut, heading-error arrow  
-- **Knobs:** \(\mu\), lookahead \(L\), style: apex offset, entry/exit bias, risk, smoothness  
+- **Knobs:** $\mu$, lookahead $L$, style: apex offset, entry/exit bias, risk, smoothness  
 - **Metrics:** lap time, max/avg lat-g, mean jerk, overshoot, apex-miss
 
 <div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">

@@ -17,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 
 <div className="mt-2 text-base leading-7 text-muted-foreground max-w-2xl">
   Every Δt, map the current vehicle state and a reference path to two commands:
-  <strong> steering</strong> \(\delta\) and <strong>longitudinal</strong> \(a_x\).
+  <strong> steering</strong> $\delta$ and <strong>longitudinal</strong> $a_x$.
   Goal: stay near the path, respect limits, finish fast and clean.
 </div>
 
@@ -26,22 +26,22 @@ import { Separator } from "@/components/ui/separator";
 ## What information we provide
 
 **Outputs we control**
-- Steering \(\delta\) (rad)
-- Longitudinal \(a_x\) (m/s²; throttle/brake)
+- Steering $\delta$ (rad)
+- Longitudinal $a_x$ (m/s²; throttle/brake)
 
 **State we assume we know**
-- Position \((x,y)\), heading \(\psi\), speed \(v\)
+- Position $(x,y)$, heading $\psi$, speed $v$
 
 **Reference path**
-- \(\gamma(s)=(x(s),y(s))\), arc length \(s\), curvature \(\kappa(s)\)
+- $\gamma(s)=(x(s),y(s))$, arc length $s$, curvature $\kappa(s)$
 
 **Environment / limits**
 ```math
-- Grip \(\mu\); actuator bounds \(|\delta|\le\delta_{\max}\), \(|a_x|\le a_{x,\max}\)
+- Grip $\mu$; actuator bounds $|\delta|\le\delta_{\max}$, $|a_x|\le a_{x,\max}$
 ```
 
 <div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
-  [DIAGRAM PLACEHOLDER] Centerline + lookahead target, heading error arrow, labels for \(\delta\), \(a_x\).
+  [DIAGRAM PLACEHOLDER] Centerline + lookahead target, heading error arrow, labels for $\delta$, $a_x$.
   {/* <PathSchematic /> */}
 </div>
 
@@ -53,11 +53,11 @@ import { Separator } from "@/components/ui/separator";
 ## Minimal formalism
 
 We seek a policy:
-\[
+$$
 \pi:\;\{x,y,\psi,v,\gamma,\kappa,\mu\}\;\mapsto\;\{\delta,\;a_x\}.
-\]
+$$
 
-Teaching surrogate over horizon \(T\):
+Teaching surrogate over horizon $T$:
 ```math
 J=\int_0^T\!\left(w_c e_\perp^2 + w_\ell e_\parallel^2 + w_u \|\mathbf{u}\|^2 + w_r \|\dot{\mathbf{u}}\|^2\right)\,dt\;-\;w_p\,\Delta s(T),\quad \mathbf{u}=[\delta,a_x].
 ```
@@ -74,9 +74,9 @@ We won’t solve this optimally in-browser. Instead, we’ll use **interpretable
 ## Constraints that matter
 
 **Friction circle:**
-\[
+$$
 (a_x)^2 + (v^2\kappa)^2 \le (\mu g)^2.
-\]
+$$
 
 **Actuators:**
 ```math
@@ -98,9 +98,9 @@ v_t(s)\approx \sqrt{\frac{\mu g}{|\kappa(s)|+\epsilon}}.
 
 ## Naive baseline (and why it fails)
 
-**Rule:** aim at a point \(L\) meters ahead on the centerline; steer ∝ heading error; throttle falls.
+**Rule:** aim at a point $L$ meters ahead on the centerline; steer ∝ heading error; throttle falls.
 
-**Symptoms:** small \(L\) → **oscillation**; large \(L\) → **lazy apex**; corner entry too fast (ignores curvature); rough commands (no smoothing).
+**Symptoms:** small $L$ → **oscillation**; large $L$ → **lazy apex**; corner entry too fast (ignores curvature); rough commands (no smoothing).
 
 <div className="my-6 rounded-2xl border bg-muted/20 px-5 py-6 text-sm text-muted-foreground">
   [INTERACTIVE PLACEHOLDER] Toggle: Naive vs Improved (preview+curvature→speed+gain scheduling).
@@ -113,25 +113,25 @@ v_t(s)\approx \sqrt{\frac{\mu g}{|\kappa(s)|+\epsilon}}.
 ## Controller I/O (per tick)
 
 **Inputs**
-- `state`: \((x,y,\psi,v)\)
-- `path`: samples \(\gamma(s_i)\), curvature \(\kappa(s_i)\)
-- `params`: lookahead \(L\), style knobs (apex offset, entry/exit bias, risk, smoothness)
+- `state`: $(x,y,\psi,v)$
+- `path`: samples $\gamma(s_i)$, curvature $\kappa(s_i)$
+- `params`: lookahead $L$, style knobs (apex offset, entry/exit bias, risk, smoothness)
 ```math
-- `limits`: \(\mu, \delta_{\max}, \dot\delta_{\max}, a_{x,\max}\)
+- `limits`: $\mu, \delta_{\max}, \dot\delta_{\max}, a_{x,\max}$
 ```
 
 **Outputs**
-- `steer`: \(\delta\)
-- `long`: \(a_x\)
+- `steer`: $\delta$
+- `long`: $a_x$
 
 <Separator className="my-10" />
 
 ## Quick glossary
 
 - **Preview / Lookahead** — pick a target ahead along the path.  
-- **Curvature \(\kappa\)** — path tightness; larger \(|\kappa|\) ⇒ lower feasible speed.  
+- **Curvature $\kappa$** — path tightness; larger $|\kappa|$ ⇒ lower feasible speed.  
 - **Contouring / Lag error** — lateral vs along-track mismatch.  
 - **Risk** — how much of the grip budget we’re willing to use near bends.  
-- **Smoothness** — jerk/rate limits on \(\delta\), \(a_x\).
+- **Smoothness** — jerk/rate limits on $\delta$, $a_x$.
 
 <br />
