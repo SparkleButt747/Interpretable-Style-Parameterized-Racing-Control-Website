@@ -25,10 +25,6 @@ export const Documents: Paths[] = [
     href: "/physics-backbone",
     items: [
       {
-        title: "Feasibility Of The Dynamic Bicycle Model",
-        href: "/feasibility-of-the-dynamic-bicycle-model",
-      },
-      {
         title: "Inputs, Outputs & State",
         href: "/inputs-outputs-and-state",
       },
