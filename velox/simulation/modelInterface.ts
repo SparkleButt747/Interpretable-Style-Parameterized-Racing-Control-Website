@@ -1,25 +1,11 @@
-import { vehicleDynamicsMB, vehicleDynamicsST, vehicleDynamicsSTD } from '../models/dynamics.ts';
-import { initMB, initST, initSTD } from '../models/init.ts';
+import { vehicleDynamicsST, vehicleDynamicsSTD } from '../models/dynamics.ts';
+import { initST, initSTD } from '../models/init.ts';
 import { VehicleParameters } from '../models/types.ts';
 import { ModelInterface } from './VehicleSimulator.ts';
 import { ModelType } from './types.ts';
 
 export function buildModelInterface(model: ModelType): ModelInterface {
   switch (model) {
-    case ModelType.MB:
-      return {
-        init: (state: number[], params: VehicleParameters) => initMB(state, params),
-        dynamics: (x, u, p) => vehicleDynamicsMB(x, u, p),
-        speed: (state) => {
-          if (state.length > 10) {
-            return Math.hypot(state[3], state[10]);
-          }
-          if (state.length > 3) {
-            return Math.abs(state[3]);
-          }
-          return 0;
-        },
-      };
     case ModelType.ST:
       return {
         init: (state: number[]) => initST(state),

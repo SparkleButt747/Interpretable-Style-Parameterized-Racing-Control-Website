@@ -17,8 +17,6 @@ function siblingConfigRoot(parameterRoot: string): string {
 
 function modelKey(model: ModelType): string {
   switch (model) {
-    case ModelType.MB:
-      return 'mb';
     case ModelType.ST:
       return 'st';
     case ModelType.STD:
@@ -292,7 +290,6 @@ export class ConfigManager {
   async loadModelTiming(model: ModelType): Promise<ModelTimingInfo> {
     await this.verifyRoots();
     const defaultTimings: Record<ModelType, ModelTimingInfo> = {
-      [ModelType.MB]: { nominal_dt: 0.005, max_dt: 0.005 },
       [ModelType.ST]: { nominal_dt: 0.01, max_dt: 0.02 },
       [ModelType.STD]: { nominal_dt: 0.01, max_dt: 0.01 },
     };

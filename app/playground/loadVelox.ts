@@ -26,6 +26,14 @@ function parseScalar(content: string, key: string): number | undefined {
   return Number.isFinite(value) ? value : undefined
 }
 
+function sanitizeLabel(label: string): string {
+  return label
+    .replace(/\s*see\s+[^,.;#]+.*$/i, "")
+    .replace(/\s*\(.*?\)\s*$/, "")
+    .replace(/\s*[-–—]\s*.*$/, "")
+    .trim()
+}
+
 function extractVehicleMeta(content: string, fallbackLabel: string): Pick<VehicleOption, "label" | "description"> {
   const commentBlob = content
     .split(/\r?\n/)
@@ -37,12 +45,13 @@ function extractVehicleMeta(content: string, fallbackLabel: string): Pick<Vehicl
 
   const sourceMatch = commentBlob.match(/values are taken from (?:a|an)?\s*([^.#]+)/i)
   const name = sourceMatch?.[1]?.trim()
-  const label = name ? name : fallbackLabel
+  const label = name ? sanitizeLabel(name) : fallbackLabel
 
-  const description =
+  const description = sanitizeLabel(
     name ??
-    commentBlob ||
-    "Vehicle parameters loaded from the local velox dataset. If values look odd, the parser will still surface them."
+      commentBlob ||
+      "Vehicle parameters loaded from the local velox dataset. If values look odd, the parser will still surface them."
+  )
 
   return { label, description }
 }
@@ -80,9 +89,6 @@ async function loadVehicleOptions(dir: string): Promise<VehicleOption[]> {
 function ensureModelTiming(configFiles: Record<string, string>): void {
   if (configFiles["model_timing.yaml"]) return
   configFiles["model_timing.yaml"] = [
-    "mb:",
-    "  nominal_dt: 0.005",
-    "  max_dt: 0.005",
     "st:",
     "  nominal_dt: 0.01",
     "  max_dt: 0.02",

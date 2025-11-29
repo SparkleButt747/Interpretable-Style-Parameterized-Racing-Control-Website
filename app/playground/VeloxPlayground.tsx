@@ -103,12 +103,13 @@ function renderSummary(vehicle: VehicleOption): string {
 
 export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
   const [selectedVehicle, setSelectedVehicle] = useState<number>(bundle.vehicles[0]?.id ?? 1)
-  const [model, setModel] = useState<ModelType>(ModelType.MB)
+  const [model, setModel] = useState<ModelType>(ModelType.ST)
   const [driftEnabled, setDriftEnabled] = useState(false)
   const [telemetry, setTelemetry] = useState<SimulationTelemetry>(new SimulationTelemetryState())
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">("idle")
   const [error, setError] = useState<string | null>(null)
   const [trace, setTrace] = useState<Array<{ x: number; y: number }>>([])
+  const [trackSize, setTrackSize] = useState({ width: trackSizePx, height: (trackSizePx * 3) / 4 })
 
   const loopCancelRef = useRef<() => void>()
   const simRef = useRef<SimulationDaemon | null>(null)
@@ -116,6 +117,7 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
   const lastFrameRef = useRef<number>(0)
   const driftRef = useRef<boolean>(false)
   const resetRef = useRef<() => void>()
+  const trackRef = useRef<HTMLDivElement>(null)
 
   const fetcher = useMemo(() => createLocalFetcher(bundle), [bundle])
 
@@ -192,6 +194,7 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
           const nextTrace = [...prev, { x: next.pose.x, y: next.pose.y }]
           return nextTrace.slice(-140)
         })
+        setStatus((prev) => (prev === "ready" ? prev : "ready"))
       } catch (err) {
         const message = err instanceof Error ? err.message : "Simulation step failed"
         setError(message)
@@ -255,14 +258,42 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
     }
   }, [driftEnabled])
 
-  const pose = telemetry.pose
-  const origin = trackSizePx / 2
-  const trackX = origin + pose.x * trackScalePx
-  const trackY = origin - pose.y * trackScalePx
-  const yawDeg = (pose.yaw * 180) / Math.PI
+  useEffect(() => {
+    const node = trackRef.current
+    if (!node) return
 
-  const speed = telemetry.velocity.speed
-  const accel = telemetry.acceleration.longitudinal
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      const { width, height } = entry.contentRect
+      setTrackSize({ width, height })
+    })
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  const pose = telemetry.pose
+  const trackPadding = 32
+  const trackWidth = Math.max(trackSize.width - trackPadding * 2, 0)
+  const trackHeight = Math.max(trackSize.height - trackPadding * 2, 0)
+  const originX = trackPadding + trackWidth / 2
+  const originY = trackPadding + trackHeight / 2
+  const trackX = originX + pose.x * trackScalePx
+  const trackY = originY - pose.y * trackScalePx
+  const yawDeg = (pose.yaw * 180) / Math.PI
+  const speed = telemetry.velocity.speed ?? 0
+  const accel = telemetry.acceleration.longitudinal ?? 0
+  const slipDeg = ((telemetry.traction.slip_angle ?? 0) * 180) / Math.PI
+  const carScale = 0.9 + Math.min(Math.abs(speed) / 24, 0.45)
+  const statusTone =
+    status === "ready"
+      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-100"
+      : status === "error"
+        ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-100"
+        : "bg-amber-100 text-amber-700 dark:bg-amber-400/20 dark:text-amber-200"
+  const statusLabel =
+    status === "ready" ? "Live" : status === "loading" ? "Loading..." : status === "error" ? "Error" : "Paused"
 
   const handleReset = useCallback(async () => {
     if (!simRef.current) return
@@ -301,10 +332,10 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
             <span
               className={cn(
                 "rounded-full px-3 py-1 font-semibold",
-                status === "ready" ? "bg-emerald-500/20 text-emerald-200" : "bg-amber-400/20 text-amber-200"
+                statusTone
               )}
             >
-              {status === "ready" ? "Live" : status === "loading" ? "Loading..." : "Paused"}
+              {statusLabel}
             </span>
           </div>
         </div>
@@ -324,7 +355,10 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
                 <span className="rounded-full bg-white/5 px-3 py-1">Space brake</span>
               </div>
             </div>
-            <div className="relative mt-4 aspect-[4/3] overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+            <div
+              ref={trackRef}
+              className="relative mt-4 aspect-[4/3] overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
+            >
               <motion.div
                 className="absolute inset-0"
                 style={{
@@ -334,8 +368,8 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
               />
               <div className="absolute inset-8 border border-white/5" />
               {trace.map((point, idx) => {
-                const x = origin + point.x * trackScalePx
-                const y = origin - point.y * trackScalePx
+                const x = originX + point.x * trackScalePx
+                const y = originY - point.y * trackScalePx
                 const opacity = (idx + 1) / trace.length
                 return (
                   <motion.div
@@ -355,20 +389,63 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
               })}
 
               <motion.div
-                className="pointer-events-none absolute origin-center rounded-xl shadow-2xl"
-                animate={{ x: trackX, y: trackY, rotate: yawDeg }}
-                transition={{ type: "spring", stiffness: 120, damping: 24, mass: 0.6 }}
+                className="pointer-events-none absolute rounded-full bg-emerald-400/15 blur-3xl"
                 style={{
-                  width: 70,
-                  height: 36,
-                  background: "linear-gradient(120deg, #34d399, #0ea5e9)",
-                  boxShadow: "0 8px 30px rgba(14,165,233,0.35)",
+                  x: trackX,
+                  y: trackY,
+                  width: 110,
+                  height: 110,
+                  translateX: "-50%",
+                  translateY: "-50%",
                 }}
+                animate={{ scale: carScale * 1.25, opacity: 0.25 + Math.min(Math.abs(speed) / 30, 0.3) }}
+                transition={{ type: "spring", stiffness: 110, damping: 18, mass: 0.6 }}
+              />
+
+              <motion.svg
+                className="pointer-events-none absolute drop-shadow-[0_12px_28px_rgba(14,165,233,0.35)]"
+                viewBox="0 0 100 140"
+                style={{
+                  x: trackX,
+                  y: trackY,
+                  width: 70,
+                  height: 98,
+                  translateX: "-50%",
+                  translateY: "-50%",
+                  originX: "50%",
+                  originY: "50%",
+                }}
+                animate={{ x: trackX, y: trackY, rotate: yawDeg, scale: carScale }}
+                transition={{ type: "spring", stiffness: 140, damping: 24, mass: 0.7 }}
               >
-                <div className="absolute left-1 top-1 h-2 w-8 rounded-full bg-white/80" />
-                <div className="absolute right-1 top-1 h-2 w-2 rounded-full bg-white/60" />
-                <div className="absolute inset-1 rounded-lg border border-white/30" />
-              </motion.div>
+                <defs>
+                  <linearGradient id="playground-car-body" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#34d399" />
+                    <stop offset="100%" stopColor="#0ea5e9" />
+                  </linearGradient>
+                </defs>
+                <motion.polygon
+                  points="94,70 26,22 26,118"
+                  fill="url(#playground-car-body)"
+                  stroke="rgba(255,255,255,0.7)"
+                  strokeWidth="4"
+                  animate={{ rotate: slipDeg * 0.1 }}
+                  transition={{ type: "spring", stiffness: 120, damping: 20 }}
+                />
+                <motion.polygon
+                  points="34,70 22,46 22,94"
+                  fill="rgba(255,255,255,0.16)"
+                  animate={{ opacity: 0.4 + Math.min(Math.abs(speed) / 14, 0.35) }}
+                />
+                <motion.circle
+                  cx="78"
+                  cy="70"
+                  r="6"
+                  fill="rgba(255,255,255,0.9)"
+                  animate={{ scale: 0.9 + Math.min(Math.abs(accel) / 6, 0.3) }}
+                  transition={{ type: "spring", stiffness: 140, damping: 16 }}
+                />
+              </motion.svg>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-200 md:grid-cols-4">
               <StatChip label="Speed" value={`${speed.toFixed(2)} m/s`} />
@@ -436,7 +513,7 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
             <div className="rounded-xl border border-white/10 bg-white/5 p-3">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Dynamics model</p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {[ModelType.MB, ModelType.ST, ModelType.STD].map((option) => (
+                {[ModelType.ST, ModelType.STD].map((option) => (
                   <motion.button
                     key={option}
                     whileHover={{ y: -2 }}
@@ -514,12 +591,12 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 6 }}
-            className="flex items-start gap-3 rounded-xl border border-amber-400/40 bg-amber-500/10 p-4 text-amber-50 shadow"
+            className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900 shadow-sm dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-50"
           >
-            <FiAlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+            <FiAlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500 dark:text-amber-200" />
             <div>
               <p className="font-semibold">Simulation hiccup</p>
-              <p className="text-sm text-amber-100/80">{error}</p>
+              <p className="text-sm text-amber-800/80 dark:text-amber-100/80">{error}</p>
             </div>
           </motion.div>
         )}

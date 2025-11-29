@@ -198,7 +198,6 @@ export interface StepSchedule {
 
 const kMinStableDt = 0.001;
 const kDefaultTimings: Record<ModelType, ModelTimingInfo> = {
-  [ModelType.MB]: { nominal_dt: 0.005, max_dt: 0.005 },
   [ModelType.ST]: { nominal_dt: 0.01, max_dt: 0.02 },
   [ModelType.STD]: { nominal_dt: 0.01, max_dt: 0.01 },
 };
@@ -290,7 +289,7 @@ export class SimulationDaemon {
   ready: Promise<void>;
 
   constructor(private readonly init: InitParams = {}) {
-    this.model = init.model ?? ModelType.MB;
+    this.model = init.model ?? ModelType.ST;
     this.vehicleId = init.vehicle_id ?? 1;
     this.driftEnabled = init.drift_enabled ?? false;
     this.controlMode = init.control_mode ?? ControlMode.Keyboard;

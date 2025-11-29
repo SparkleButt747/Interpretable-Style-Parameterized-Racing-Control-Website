@@ -3,12 +3,6 @@ import { ModelType } from './types.ts';
 
 export type VehicleBackendOptions = Omit<JsBackendOptions, 'model'> & { model?: ModelType };
 
-export class MBSimulationBackend extends JsSimulationBackend {
-  constructor(options: VehicleBackendOptions) {
-    super({ ...options, model: ModelType.MB });
-  }
-}
-
 export class STSimulationBackend extends JsSimulationBackend {
   constructor(options: VehicleBackendOptions) {
     super({ ...options, model: ModelType.ST });

@@ -1,8 +1,8 @@
 {
   "scenarios": [
     {
-      "name": "mb_straightline_accel",
-      "model": "MB",
+      "name": "st_straightline_accel",
+      "model": "ST",
       "vehicleId": 1,
       "initialState": [0, 0, 0, 0],
       "dt": 0.01,

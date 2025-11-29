@@ -102,6 +102,7 @@ function toModel(value: keyof typeof ModelType | ModelType): ModelType {
     if (ModelType[key]) {
       return ModelType[key];
     }
+    throw new Error(`Unsupported model type ${value}`);
   }
   return value as ModelType;
 }

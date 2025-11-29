@@ -1,11 +1,11 @@
-import { MBSimulationBackend, STSimulationBackend, STDSimulationBackend } from './vehicleBackends.ts';
+import { STSimulationBackend, STDSimulationBackend } from './vehicleBackends.ts';
 import type { NativeDaemonFactory, NativeDaemonHandle } from './backend.ts';
 import { ModelType } from './types.ts';
 import { VehicleParameters } from '../models/types.ts';
 
 class TypeScriptNativeDaemon implements NativeDaemonHandle {
   constructor(
-    private readonly backend: MBSimulationBackend | STSimulationBackend | STDSimulationBackend
+    private readonly backend: STSimulationBackend | STDSimulationBackend
   ) {}
 
   reset(state: number[], dt: number): void {
@@ -27,8 +27,6 @@ class TypeScriptNativeDaemon implements NativeDaemonHandle {
 
 function modelKey(model: ModelType): string {
   switch (model) {
-    case ModelType.MB:
-      return 'mb';
     case ModelType.ST:
       return 'st';
     case ModelType.STD:
@@ -53,7 +51,7 @@ function selectModelConfig<T extends Record<string, any>>(config: T, model: Mode
 /**
  * Packaged native daemon factory implemented purely in TypeScript. This mirrors
  * the C++ solvers and safety logic so that HybridSimulationBackend can run the
- * MB, ST, and STD models without external bindings.
+ * ST and STD models without external bindings.
  */
 export const packagedNativeFactory: NativeDaemonFactory = async ({
   model,
@@ -82,15 +80,14 @@ function createModelBackend(options: {
   lowSpeed: Record<string, unknown>;
   lossConfig: Record<string, unknown>;
   driftEnabled: boolean;
-}): MBSimulationBackend | STSimulationBackend | STDSimulationBackend {
+}): STSimulationBackend | STDSimulationBackend {
   switch (options.model) {
     case ModelType.ST:
       return new STSimulationBackend(options);
     case ModelType.STD:
       return new STDSimulationBackend(options);
-    case ModelType.MB:
     default:
-      return new MBSimulationBackend(options);
+      return new STSimulationBackend(options);
   }
 }
 

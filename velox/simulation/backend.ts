@@ -114,7 +114,7 @@ export class HybridSimulationBackend implements SimulationBackend {
     const factory = this.options.nativeFactory ?? packagedNativeFactory;
 
     if (!factory) {
-      throw new Error('HybridSimulationBackend requires a native backend factory for MB/ST/STD models');
+      throw new Error('HybridSimulationBackend requires a native backend factory for ST/STD models');
     }
 
     try {
@@ -217,8 +217,6 @@ function ensureObject(value: unknown): Record<string, unknown> {
 
 function modelKey(model: ModelType): string {
   switch (model) {
-    case ModelType.MB:
-      return 'mb';
     case ModelType.ST:
       return 'st';
     case ModelType.STD:
@@ -304,13 +302,12 @@ function defaultLossOfControlConfig(model: ModelType): LossOfControlConfig {
         lateral_accel: { threshold: 7.0, rate: 14 },
         slip_ratio: { threshold: 0.5, rate: 7 },
       };
-    case ModelType.MB:
     default:
       return {
-        yaw_rate: { threshold: 1.6, rate: 10 },
-        slip_angle: { threshold: 0.5, rate: 5 },
-        lateral_accel: { threshold: 7.5, rate: 15 },
-        slip_ratio: { threshold: 0.2, rate: 7 },
+        yaw_rate: { threshold: 1.2, rate: 9 },
+        slip_angle: { threshold: 0.45, rate: 4.5 },
+        lateral_accel: { threshold: 6.5, rate: 12 },
+        slip_ratio: { threshold: 0.18, rate: 6 },
       };
   }
 }

@@ -109,31 +109,15 @@ export class JsSimulationBackend implements SimulationBackend {
   }
 
   private estimateAxleSlips(state: number[]): { front: number; rear: number } {
-    switch (this.options.model) {
-      case ModelType.MB: {
-        const yawRate = this.indexValue(state, this.indices.yawRateIndex);
-        const vLong = this.indexValue(state, this.indices.longitudinalIndex);
-        const vLat = this.indexValue(state, this.indices.lateralIndex);
-        const steering = this.indexValue(state, this.indices.steeringIndex);
-        const front = Math.atan2(vLat + this.params.a * yawRate, Math.max(Math.abs(vLong), 1e-6)) - steering;
-        const rear = Math.atan2(vLat - this.params.b * yawRate, Math.max(Math.abs(vLong), 1e-6));
-        return { front, rear };
-      }
-      case ModelType.ST:
-      case ModelType.STD: {
-        const speed = this.indexValue(state, this.indices.longitudinalIndex);
-        const beta = this.indexValue(state, this.indices.slipIndex);
-        const yawRate = this.indexValue(state, this.indices.yawRateIndex);
-        const steering = this.indexValue(state, this.indices.steeringIndex);
-        const vLong = speed * Math.cos(beta);
-        const vLat = speed * Math.sin(beta);
-        const front = Math.atan2(vLat + this.params.a * yawRate, Math.max(Math.abs(vLong), 1e-6)) - steering;
-        const rear = Math.atan2(vLat - this.params.b * yawRate, Math.max(Math.abs(vLong), 1e-6));
-        return { front, rear };
-      }
-      default:
-        return { front: 0, rear: 0 };
-    }
+    const speed = this.indexValue(state, this.indices.longitudinalIndex);
+    const beta = this.indexValue(state, this.indices.slipIndex);
+    const yawRate = this.indexValue(state, this.indices.yawRateIndex);
+    const steering = this.indexValue(state, this.indices.steeringIndex);
+    const vLong = speed * Math.cos(beta);
+    const vLat = speed * Math.sin(beta);
+    const front = Math.atan2(vLat + this.params.a * yawRate, Math.max(Math.abs(vLong), 1e-6)) - steering;
+    const rear = Math.atan2(vLat - this.params.b * yawRate, Math.max(Math.abs(vLong), 1e-6));
+    return { front, rear };
   }
 
   private estimateLateralAccel(state: number[]): number {
@@ -152,11 +136,6 @@ export class JsSimulationBackend implements SimulationBackend {
 
   private computeSlipRatios(state: number[], speed: number): number[] {
     const denom = Math.max(speed, 1e-6);
-    if (this.options.model === ModelType.MB) {
-      const front = this.indexValue(state, 23);
-      const rear = this.indexValue(state, 25);
-      return [(front - speed) / denom, (rear - speed) / denom];
-    }
     if (this.options.model === ModelType.STD) {
       const front = this.indexValue(state, 7);
       const rear = this.indexValue(state, 8);
@@ -177,20 +156,13 @@ export class JsSimulationBackend implements SimulationBackend {
     const frontSplit = clamp(this.params.T_sb, 0, 1);
     const rearSplit = 1 - frontSplit;
 
-    let yaw = 0;
-    switch (this.options.model) {
-      case ModelType.MB:
-        yaw = state[4] ?? 0;
-        break;
-      case ModelType.ST:
-      case ModelType.STD:
-      default:
-        yaw = state[4] ?? 0;
-        break;
-    }
-
+    const yaw = state[4] ?? 0;
     const vLong = this.indexValue(state, this.indices.longitudinalIndex);
-    const vLat = this.indexValue(state, this.indices.lateralIndex ?? -1);
+    let vLat = this.indexValue(state, this.indices.lateralIndex ?? -1);
+    if (this.indices.lateralIndex === undefined && this.indices.slipIndex !== undefined) {
+      const slip = this.indexValue(state, this.indices.slipIndex);
+      vLat = vLong * Math.tan(slip);
+    }
     const yawRate = this.indexValue(state, this.indices.yawRateIndex);
     const slipAngle = this.indexValue(state, this.indices.slipIndex);
     const speed = this.simulator.speed();
@@ -301,9 +273,6 @@ export class JsSimulationBackend implements SimulationBackend {
   }
 
   private estimateWheelSpeed(state: number[], front: boolean): number {
-    if (this.options.model === ModelType.MB) {
-      return front ? this.indexValue(state, 23) : this.indexValue(state, 25);
-    }
     if (this.options.model === ModelType.STD) {
       return front ? this.indexValue(state, 7) : this.indexValue(state, 8);
     }
@@ -333,13 +302,11 @@ function buildSafetyIndices(model: ModelType, params: VehicleParameters): LowSpe
       steeringIndex = 2;
       wheelSpeedIndices = [7, 8];
       break;
-    case ModelType.MB:
     default:
       longitudinalIndex = 3;
-      lateralIndex = 10;
       yawRateIndex = 5;
+      slipIndex = 6;
       steeringIndex = 2;
-      wheelSpeedIndices = [23, 24, 25, 26];
       break;
   }
 

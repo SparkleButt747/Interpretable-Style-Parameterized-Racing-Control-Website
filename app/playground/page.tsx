@@ -11,14 +11,16 @@ export default async function PlaygroundPage() {
   const bundle = await loadVeloxBundle()
 
   return (
-    <section className="mx-auto flex w-full max-w-5xl flex-col gap-8 py-12">
-      <div className="space-y-4 text-center">
+    <section className="flex w-full flex-col gap-8 py-12 px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-3xl space-y-4 text-center">
         <p className="text-sm uppercase tracking-widest text-primary">Interactive Playground</p>
         <h1 className="text-4xl font-bold sm:text-5xl">{frontmatter.title}</h1>
         <p className="text-muted-foreground text-base">{frontmatter.description}</p>
         <Separator />
       </div>
-      <VeloxPlayground bundle={bundle} />
+      <div className="w-full">
+        <VeloxPlayground bundle={bundle} />
+      </div>
       <div className="mx-auto w-full max-w-4xl">
         <Typography>
           <div className="text-left">{content}</div>
