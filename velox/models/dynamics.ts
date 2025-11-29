@@ -1,7 +1,7 @@
-import { accelerationConstraints, steeringConstraints } from './constraints.ts';
-import { formulaLateral, formulaLateralCombined, formulaLongitudinal, formulaLongitudinalCombined } from './tireModel.ts';
-import { VehicleParameters } from './types.ts';
-import { vehicleDynamicsKsCog } from './vehicleKinematics.ts';
+import { accelerationConstraints, steeringConstraints } from './constraints';
+import { formulaLateral, formulaLateralCombined, formulaLongitudinal, formulaLongitudinalCombined } from './tireModel';
+import { VehicleParameters } from './types';
+import { vehicleDynamicsKsCog } from './vehicleKinematics';
 
 const kGravity = 9.81;
 

@@ -1,7 +1,9 @@
-import { STSimulationBackend, STDSimulationBackend } from './vehicleBackends.ts';
-import type { NativeDaemonFactory, NativeDaemonHandle } from './backend.ts';
-import { ModelType } from './types.ts';
-import { VehicleParameters } from '../models/types.ts';
+import { STSimulationBackend, STDSimulationBackend, type VehicleBackendOptions } from './vehicleBackends';
+import type { NativeDaemonFactory, NativeDaemonHandle } from './backend';
+import { ModelType } from './types';
+import { VehicleParameters } from '../models/types';
+import type { LowSpeedSafetyConfig } from './LowSpeedSafety';
+import type { LossOfControlConfig } from './LossOfControlDetector';
 
 class TypeScriptNativeDaemon implements NativeDaemonHandle {
   constructor(
@@ -65,22 +67,16 @@ export const packagedNativeFactory: NativeDaemonFactory = async ({
 
   const backend = createModelBackend({
     model,
-    params: (vehicleParameters as VehicleParameters) ?? ({} as VehicleParameters),
-    lowSpeed: safetyConfig as any,
-    lossConfig: lossConfig as any,
+    params: (vehicleParameters ?? {}) as unknown as VehicleParameters,
+    lowSpeed: safetyConfig as LowSpeedSafetyConfig,
+    lossConfig: lossConfig as LossOfControlConfig,
     driftEnabled,
   });
 
   return new TypeScriptNativeDaemon(backend);
 };
 
-function createModelBackend(options: {
-  model: ModelType;
-  params: VehicleParameters;
-  lowSpeed: Record<string, unknown>;
-  lossConfig: Record<string, unknown>;
-  driftEnabled: boolean;
-}): STSimulationBackend | STDSimulationBackend {
+function createModelBackend(options: VehicleBackendOptions & { model: ModelType }): STSimulationBackend | STDSimulationBackend {
   switch (options.model) {
     case ModelType.ST:
       return new STSimulationBackend(options);

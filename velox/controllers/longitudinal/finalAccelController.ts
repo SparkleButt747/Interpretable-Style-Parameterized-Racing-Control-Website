@@ -1,7 +1,7 @@
-import { AeroConfig, AeroModel } from './aero.ts';
-import { BrakeBlendOutput, BrakeConfig, BrakeController } from './brake.ts';
-import { Powertrain, PowertrainConfig, PowertrainOutput } from './powertrain.ts';
-import { RollingResistance, RollingResistanceConfig } from './rolling.ts';
+import { AeroConfig, AeroModel } from './aero';
+import { BrakeBlendOutput, BrakeConfig, BrakeController } from './brake';
+import { Powertrain, PowertrainConfig, PowertrainOutput } from './powertrain';
+import { RollingResistance, RollingResistanceConfig } from './rolling';
 
 export interface FinalAccelControllerConfig {
   tau_throttle: number;

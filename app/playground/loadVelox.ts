@@ -48,8 +48,7 @@ function extractVehicleMeta(content: string, fallbackLabel: string): Pick<Vehicl
   const label = name ? sanitizeLabel(name) : fallbackLabel
 
   const description = sanitizeLabel(
-    name ??
-      commentBlob ||
+    (name ?? commentBlob) ||
       "Vehicle parameters loaded from the local velox dataset. If values look odd, the parser will still surface them."
   )
 

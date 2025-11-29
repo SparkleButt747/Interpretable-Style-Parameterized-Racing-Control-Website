@@ -1,5 +1,5 @@
-import { accelerationConstraints, steeringConstraints } from './constraints.ts';
-import { VehicleParameters } from './types.ts';
+import { accelerationConstraints, steeringConstraints } from './constraints';
+import { VehicleParameters } from './types';
 
 export function vehicleDynamicsKsCog(x: number[], uInit: number[], params: VehicleParameters): number[] {
   if (x.length !== 5 || uInit.length !== 2) {

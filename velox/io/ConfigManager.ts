@@ -1,5 +1,5 @@
-import { VehicleParameters, LongitudinalParameters, SteeringParameters, TireParameters, TrailerParameters } from '../models/types.ts';
-import { ModelTimingInfo, ModelType } from '../simulation/types.ts';
+import { VehicleParameters, LongitudinalParameters, SteeringParameters, TireParameters, TrailerParameters } from '../models/types';
+import { ModelTimingInfo, ModelType } from '../simulation/types';
 
 export type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 

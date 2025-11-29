@@ -1,8 +1,8 @@
-import { vehicleDynamicsST, vehicleDynamicsSTD } from '../models/dynamics.ts';
-import { initST, initSTD } from '../models/init.ts';
-import { VehicleParameters } from '../models/types.ts';
-import { ModelInterface } from './VehicleSimulator.ts';
-import { ModelType } from './types.ts';
+import { vehicleDynamicsST, vehicleDynamicsSTD } from '../models/dynamics';
+import { initST, initSTD } from '../models/init';
+import { VehicleParameters } from '../models/types';
+import { ModelInterface } from './VehicleSimulator';
+import { ModelType } from './types';
 
 export function buildModelInterface(model: ModelType): ModelInterface {
   switch (model) {

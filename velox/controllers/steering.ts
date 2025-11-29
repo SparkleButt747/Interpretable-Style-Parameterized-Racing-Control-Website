@@ -1,4 +1,4 @@
-import { SteeringParameters } from '../models/types.ts';
+import { SteeringParameters } from '../models/types';
 
 export interface SteeringConfig {
   wheel: {

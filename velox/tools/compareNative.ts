@@ -3,11 +3,11 @@ import { readFile } from 'fs/promises';
 import { access } from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { HybridSimulationBackend, NativeDaemonFactory } from '../simulation/backend.ts';
-import { ConfigManager } from '../io/ConfigManager.ts';
-import { ModelType } from '../simulation/types.ts';
-import type { BackendSnapshot, SimulationBackend } from '../simulation/backend.ts';
-import type { SimulationTelemetry } from '../telemetry/index.ts';
+import { HybridSimulationBackend, NativeDaemonFactory } from '../simulation/backend';
+import { ConfigManager } from '../io/ConfigManager';
+import { ModelType } from '../simulation/types';
+import type { BackendSnapshot, SimulationBackend } from '../simulation/backend';
+import type { SimulationTelemetry } from '../telemetry/index';
 
 interface TraceSegment {
   steps: number;
@@ -119,7 +119,7 @@ function buildFileFetcher(root: string) {
       return new Response('', { status: 200 });
     }
     const contents = await readFile(filePath);
-    return new Response(contents, { status: 200 });
+    return new Response(new Uint8Array(contents), { status: 200 });
   };
 }
 

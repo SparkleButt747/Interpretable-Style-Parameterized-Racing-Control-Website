@@ -1,5 +1,5 @@
-import { JsSimulationBackend, JsBackendOptions } from './jsBackend.ts';
-import { ModelType } from './types.ts';
+import { JsSimulationBackend, JsBackendOptions } from './jsBackend';
+import { ModelType } from './types';
 
 export type VehicleBackendOptions = Omit<JsBackendOptions, 'model'> & { model?: ModelType };
 

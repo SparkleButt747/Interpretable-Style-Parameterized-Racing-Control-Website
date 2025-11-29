@@ -9,14 +9,16 @@ import {
   SteeringTelemetryState,
   TractionTelemetryState,
   VelocityTelemetryState,
-} from '../telemetry/index.ts';
-import { ConfigManager, type Fetcher } from '../io/ConfigManager.ts';
-import { ControlMode, ModelTimingInfo, ModelType } from './types.ts';
-import { BackendSnapshot, HybridSimulationBackend, NativeDaemonFactory, SimulationBackend } from './backend.ts';
-import { SteeringWheel, FinalSteerController } from '../controllers/steering.ts';
-import { FinalAccelController, ControllerOutput as AccelControllerOutput } from '../controllers/longitudinal/finalAccelController.ts';
-import { VehicleParameters } from '../models/types.ts';
-export { ControlMode, ModelTimingInfo, ModelType } from './types.ts';
+} from '../telemetry/index';
+import { ConfigManager, type Fetcher } from '../io/ConfigManager';
+import { ControlMode, ModelType } from './types';
+import type { ModelTimingInfo } from './types';
+import { BackendSnapshot, HybridSimulationBackend, NativeDaemonFactory, SimulationBackend } from './backend';
+import { SteeringWheel, FinalSteerController } from '../controllers/steering';
+import { FinalAccelController, ControllerOutput as AccelControllerOutput } from '../controllers/longitudinal/finalAccelController';
+import { VehicleParameters } from '../models/types';
+export { ControlMode, ModelType } from './types';
+export type { ModelTimingInfo } from './types';
 
 export interface DriverIntent {
   throttle: number;
@@ -170,6 +172,7 @@ export interface InitParams {
   config_fetcher?: Fetcher;
   limits?: UserInputLimits;
   timing?: ModelTimingInfo;
+  initial_state?: number[];
 }
 
 export interface ResetParams {

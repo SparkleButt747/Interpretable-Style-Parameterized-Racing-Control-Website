@@ -1,4 +1,4 @@
-import { SafetyStage } from '../telemetry/index.ts';
+import { SafetyStage } from '../telemetry/index';
 
 export interface LowSpeedSafetyProfile {
   engage_speed: number;

@@ -36,6 +36,16 @@ const defaultLimits = new UserInputLimits({
   max_steering_nudge: 1,
 })
 
+const DEG_PER_RAD = 180 / Math.PI
+
+const toDegrees = (radians: number) => radians * DEG_PER_RAD
+const normalizeDeg = (degrees: number) => ((degrees % 360) + 360) % 360
+const shortestDeltaDeg = (a: number, b: number) => {
+  const diff = normalizeDeg(a - b)
+  return diff > 180 ? diff - 360 : diff
+}
+const worldToScreenDeg = (radians: number) => -toDegrees(radians)
+
 function createLocalFetcher(bundle: VeloxConfigBundle): Fetcher {
   return async (input: RequestInfo | URL, init?: RequestInit) => {
     const method =
@@ -111,13 +121,14 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
   const [trace, setTrace] = useState<Array<{ x: number; y: number }>>([])
   const [trackSize, setTrackSize] = useState({ width: trackSizePx, height: (trackSizePx * 3) / 4 })
 
-  const loopCancelRef = useRef<() => void>()
+  const loopCancelRef = useRef<(() => void) | null>(null)
   const simRef = useRef<SimulationDaemon | null>(null)
   const inputRef = useRef<ControlState>({ throttle: 0, brake: 0, steering: 0 })
   const lastFrameRef = useRef<number>(0)
   const driftRef = useRef<boolean>(false)
-  const resetRef = useRef<() => void>()
+  const resetRef = useRef<(() => void) | null>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+  const headingDebug = process.env.NODE_ENV !== "production"
 
   const fetcher = useMemo(() => createLocalFetcher(bundle), [bundle])
 
@@ -166,7 +177,7 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
 
   const stopLoop = useCallback(() => {
     loopCancelRef.current?.()
-    loopCancelRef.current = undefined
+    loopCancelRef.current = null
   }, [])
 
   const startLoop = useCallback(() => {
@@ -281,10 +292,18 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
   const originY = trackPadding + trackHeight / 2
   const trackX = originX + pose.x * trackScalePx
   const trackY = originY - pose.y * trackScalePx
-  const yawDeg = (pose.yaw * 180) / Math.PI
+  const yawDeg = toDegrees(pose.yaw)
+  const headingDeg = worldToScreenDeg(pose.yaw)
   const speed = telemetry.velocity.speed ?? 0
   const accel = telemetry.acceleration.longitudinal ?? 0
-  const slipDeg = ((telemetry.traction.slip_angle ?? 0) * 180) / Math.PI
+  const slipDeg = toDegrees(telemetry.traction.slip_angle ?? 0)
+  const slipVisualDeg = worldToScreenDeg(telemetry.traction.slip_angle ?? 0) * 0.1
+  const renderRotationDeg = headingDeg
+  const velocityHeadingDeg =
+    speed > 0.05 ? worldToScreenDeg(Math.atan2(telemetry.velocity.global_y, telemetry.velocity.global_x)) : null
+  const headingErrorDeg = shortestDeltaDeg(renderRotationDeg, headingDeg)
+  const travelHeadingErrorDeg =
+    velocityHeadingDeg === null ? null : shortestDeltaDeg(velocityHeadingDeg, headingDeg)
   const carScale = 0.9 + Math.min(Math.abs(speed) / 24, 0.45)
   const statusTone =
     status === "ready"
@@ -294,6 +313,36 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
         : "bg-amber-100 text-amber-700 dark:bg-amber-400/20 dark:text-amber-200"
   const statusLabel =
     status === "ready" ? "Live" : status === "loading" ? "Loading..." : status === "error" ? "Error" : "Paused"
+
+  useEffect(() => {
+    if (!headingDebug) return
+    const headingMismatch = Math.abs(headingErrorDeg)
+    const travelMismatch = travelHeadingErrorDeg === null ? null : Math.abs(travelHeadingErrorDeg)
+    if (headingMismatch > 0.5 || (travelMismatch !== null && travelMismatch > 10)) {
+      console.debug("[Velox Playground] heading check", {
+        poseYawRad: pose.yaw,
+        poseYawDeg: yawDeg,
+        screenHeadingDeg: headingDeg,
+        renderRotationDeg,
+        slipDeg,
+        slipVisualDeg,
+        headingErrorDeg,
+        velocityHeadingDeg,
+        travelHeadingErrorDeg,
+      })
+    }
+  }, [
+    headingDebug,
+    headingErrorDeg,
+    travelHeadingErrorDeg,
+    pose.yaw,
+    yawDeg,
+    headingDeg,
+    renderRotationDeg,
+    slipDeg,
+    slipVisualDeg,
+    velocityHeadingDeg,
+  ])
 
   const handleReset = useCallback(async () => {
     if (!simRef.current) return
@@ -367,6 +416,44 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
                 }}
               />
               <div className="absolute inset-8 border border-white/5" />
+              {headingDebug && (
+                <div className="absolute left-3 top-3 space-y-1 rounded-lg bg-slate-950/80 px-3 py-2 text-[11px] text-emerald-50 ring-1 ring-white/10 backdrop-blur">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>World yaw</span>
+                    <span className="font-mono">{yawDeg.toFixed(1)}°</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Screen yaw</span>
+                    <span className="font-mono">{headingDeg.toFixed(1)}°</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Render rot</span>
+                    <span className="font-mono">{renderRotationDeg.toFixed(1)}°</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Slip</span>
+                    <span className="font-mono">
+                      {slipDeg.toFixed(2)}° / {slipVisualDeg.toFixed(2)}°
+                    </span>
+                  </div>
+                  {velocityHeadingDeg !== null && (
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Velocity</span>
+                      <span className="font-mono">{velocityHeadingDeg.toFixed(1)}°</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Heading Δ</span>
+                    <span className="font-mono">{headingErrorDeg.toFixed(2)}°</span>
+                  </div>
+                  {travelHeadingErrorDeg !== null && (
+                    <div className="flex items-center justify-between gap-3">
+                      <span>Travel Δ</span>
+                      <span className="font-mono">{travelHeadingErrorDeg.toFixed(2)}°</span>
+                    </div>
+                  )}
+                </div>
+              )}
               {trace.map((point, idx) => {
                 const x = originX + point.x * trackScalePx
                 const y = originY - point.y * trackScalePx
@@ -393,8 +480,8 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
                 style={{
                   x: trackX,
                   y: trackY,
-                  width: 110,
-                  height: 110,
+                  width: 90,
+                  height: 90,
                   translateX: "-50%",
                   translateY: "-50%",
                 }}
@@ -408,14 +495,14 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
                 style={{
                   x: trackX,
                   y: trackY,
-                  width: 70,
-                  height: 98,
+                  width: 56,
+                  height: 78,
                   translateX: "-50%",
                   translateY: "-50%",
                   originX: "50%",
                   originY: "50%",
                 }}
-                animate={{ x: trackX, y: trackY, rotate: yawDeg, scale: carScale }}
+                animate={{ x: trackX, y: trackY, rotate: renderRotationDeg, scale: carScale }}
                 transition={{ type: "spring", stiffness: 140, damping: 24, mass: 0.7 }}
               >
                 <defs>
@@ -429,8 +516,15 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
                   fill="url(#playground-car-body)"
                   stroke="rgba(255,255,255,0.7)"
                   strokeWidth="4"
-                  animate={{ rotate: slipDeg * 0.1 }}
                   transition={{ type: "spring", stiffness: 120, damping: 20 }}
+                />
+                <motion.polygon
+                  points="94,70 26,22 26,118"
+                  fill="rgba(52,211,153,0.18)"
+                  className="mix-blend-screen"
+                  animate={{ rotate: slipVisualDeg }}
+                  style={{ originX: "50%", originY: "50%" }}
+                  transition={{ type: "spring", stiffness: 160, damping: 22 }}
                 />
                 <motion.polygon
                   points="34,70 22,46 22,94"

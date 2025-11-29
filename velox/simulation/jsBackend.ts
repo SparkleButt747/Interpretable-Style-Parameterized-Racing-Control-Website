@@ -1,11 +1,11 @@
-import { SimulationTelemetryState, SafetyStage } from '../telemetry/index.ts';
-import type { BackendSnapshot, SimulationBackend } from './backend.ts';
-import { ModelType } from './types.ts';
-import { VehicleParameters } from '../models/types.ts';
-import { VehicleSimulator } from './VehicleSimulator.ts';
-import { buildModelInterface } from './modelInterface.ts';
-import { LowSpeedSafety, LowSpeedSafetyConfig, LowSpeedIndices } from './LowSpeedSafety.ts';
-import { LossOfControlConfig, LossOfControlDetector } from './LossOfControlDetector.ts';
+import { SimulationTelemetryState, SafetyStage } from '../telemetry/index';
+import type { BackendSnapshot, SimulationBackend } from './backend';
+import { ModelType } from './types';
+import { VehicleParameters } from '../models/types';
+import { VehicleSimulator } from './VehicleSimulator';
+import { buildModelInterface } from './modelInterface';
+import { LowSpeedSafety, LowSpeedSafetyConfig, LowSpeedIndices } from './LowSpeedSafety';
+import { LossOfControlConfig, LossOfControlDetector } from './LossOfControlDetector';
 
 export interface JsBackendOptions {
   model: ModelType;

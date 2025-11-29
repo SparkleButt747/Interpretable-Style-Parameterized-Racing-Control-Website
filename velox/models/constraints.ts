@@ -1,4 +1,4 @@
-import { LongitudinalParameters, SteeringParameters } from './types.ts';
+import { LongitudinalParameters, SteeringParameters } from './types';
 
 export function steeringConstraints(angle: number, rate: number, params: SteeringParameters): number {
   let steeringVelocity = rate;
