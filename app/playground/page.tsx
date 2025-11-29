@@ -2,22 +2,28 @@ import { Settings } from "@/types/settings"
 import { getStandaloneSection } from "@/lib/markdown"
 import { Separator } from "@/components/ui/separator"
 import { Typography } from "@/components/ui/typography"
+import { VeloxPlayground } from "./VeloxPlayground"
+import { loadVeloxBundle } from "./loadVelox"
 
 export default async function PlaygroundPage() {
   const res = await getStandaloneSection("playground")
   const { frontmatter, content } = res
+  const bundle = await loadVeloxBundle()
 
   return (
-    <section className="mx-auto flex w-full max-w-3xl flex-col gap-6 py-12 text-center">
-      <div className="space-y-4">
+    <section className="mx-auto flex w-full max-w-5xl flex-col gap-8 py-12">
+      <div className="space-y-4 text-center">
         <p className="text-sm uppercase tracking-widest text-primary">Interactive Playground</p>
         <h1 className="text-4xl font-bold sm:text-5xl">{frontmatter.title}</h1>
         <p className="text-muted-foreground text-base">{frontmatter.description}</p>
         <Separator />
       </div>
-      <Typography>
-        <div className="text-left">{content}</div>
-      </Typography>
+      <VeloxPlayground bundle={bundle} />
+      <div className="mx-auto w-full max-w-4xl">
+        <Typography>
+          <div className="text-left">{content}</div>
+        </Typography>
+      </div>
     </section>
   )
 }

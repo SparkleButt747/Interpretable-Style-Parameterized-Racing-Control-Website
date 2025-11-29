@@ -1,7 +1,22 @@
 ---
 title: Interactive Playground Overview
-description: Explore simulations and comparisons for the Interpretable Style-Parameterized Racing Control project.
+description: Drive velox vehicle models live in the browser and inspect the telemetry.
 keywords: ["interactive playground", "controller demo", "racing control"]
 ---
 
-Interactive playground content coming soon.
+This playground spins up the TypeScript port of the velox `SimulationDaemon` directly in the browser. Configuration
+and parameter YAML files are pulled from the local `config/` and `parameters/` directories using a lightweight
+in-memory fetcher so you can try different vehicles without leaving the page.
+
+### How to drive
+
+- `W` / `S` (or Up / Down) to throttle and brake.
+- `A` / `D` (or Left / Right) to steer.
+- `Shift` toggles the drift guard and `R` restarts the current run.
+
+### Vehicle data
+
+- Vehicle options are loaded from `parameters/vehicle/parameters_vehicle*.yaml` and their descriptions are derived from
+  the header comments in each YAML file.
+- Model timing defaults are surfaced via `config/model_timing.yaml` so the daemon no longer falls back silently.
+- If a file is missing, the UI will show a warning banner and keep the previous good state running.

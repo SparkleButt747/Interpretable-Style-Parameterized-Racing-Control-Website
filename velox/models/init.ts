@@ -1,4 +1,4 @@
-import { VehicleParameters } from './types.js';
+import { VehicleParameters } from './types.ts';
 
 export function initST(init: number[]): number[] {
   const size = 7;

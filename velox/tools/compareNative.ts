@@ -3,11 +3,11 @@ import { readFile } from 'fs/promises';
 import { access } from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { HybridSimulationBackend, NativeDaemonFactory } from '../simulation/backend.js';
-import { ConfigManager } from '../io/ConfigManager.js';
-import { ModelType } from '../simulation/types.js';
-import type { BackendSnapshot, SimulationBackend } from '../simulation/backend.js';
-import type { SimulationTelemetry } from '../telemetry/index.js';
+import { HybridSimulationBackend, NativeDaemonFactory } from '../simulation/backend.ts';
+import { ConfigManager } from '../io/ConfigManager.ts';
+import { ModelType } from '../simulation/types.ts';
+import type { BackendSnapshot, SimulationBackend } from '../simulation/backend.ts';
+import type { SimulationTelemetry } from '../telemetry/index.ts';
 
 interface TraceSegment {
   steps: number;
@@ -62,7 +62,7 @@ function usage(): never {
 
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
-    fixturePath: path.resolve('web-sdk/tools/fixtures/driveTraces.json'),
+    fixturePath: path.resolve('web-sdk/tools/fixtures/driveTraces.tson'),
     parameterRoot: path.resolve('parameters'),
   };
 

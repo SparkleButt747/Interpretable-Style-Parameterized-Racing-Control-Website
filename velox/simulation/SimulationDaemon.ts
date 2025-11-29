@@ -9,14 +9,14 @@ import {
   SteeringTelemetryState,
   TractionTelemetryState,
   VelocityTelemetryState,
-} from '../telemetry/index.js';
-import { ConfigManager } from '../io/ConfigManager.js';
-import { ControlMode, ModelTimingInfo, ModelType } from './types.js';
-import { BackendSnapshot, HybridSimulationBackend, NativeDaemonFactory, SimulationBackend } from './backend.js';
-import { SteeringWheel, FinalSteerController } from '../controllers/steering.js';
-import { FinalAccelController, ControllerOutput as AccelControllerOutput } from '../controllers/longitudinal/finalAccelController.js';
-import { VehicleParameters } from '../models/types.js';
-export { ControlMode, ModelTimingInfo, ModelType } from './types.js';
+} from '../telemetry/index.ts';
+import { ConfigManager, type Fetcher } from '../io/ConfigManager.ts';
+import { ControlMode, ModelTimingInfo, ModelType } from './types.ts';
+import { BackendSnapshot, HybridSimulationBackend, NativeDaemonFactory, SimulationBackend } from './backend.ts';
+import { SteeringWheel, FinalSteerController } from '../controllers/steering.ts';
+import { FinalAccelController, ControllerOutput as AccelControllerOutput } from '../controllers/longitudinal/finalAccelController.ts';
+import { VehicleParameters } from '../models/types.ts';
+export { ControlMode, ModelTimingInfo, ModelType } from './types.ts';
 
 export interface DriverIntent {
   throttle: number;
@@ -166,6 +166,8 @@ export interface InitParams {
   control_mode?: ControlMode;
   backend?: SimulationBackend;
   native_factory?: NativeDaemonFactory;
+  config_manager?: ConfigManager;
+  config_fetcher?: Fetcher;
   limits?: UserInputLimits;
   timing?: ModelTimingInfo;
 }
@@ -292,7 +294,8 @@ export class SimulationDaemon {
     this.vehicleId = init.vehicle_id ?? 1;
     this.driftEnabled = init.drift_enabled ?? false;
     this.controlMode = init.control_mode ?? ControlMode.Keyboard;
-    this.configManager = new ConfigManager(init.config_root, init.parameter_root);
+    this.configManager =
+      init.config_manager ?? new ConfigManager(init.config_root, init.parameter_root, init.config_fetcher);
     this.backend = init.backend ?? new HybridSimulationBackend({
       model: this.model,
       vehicleId: this.vehicleId,

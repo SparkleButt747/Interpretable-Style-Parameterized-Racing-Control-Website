@@ -1,5 +1,5 @@
-import { VehicleParameters, LongitudinalParameters, SteeringParameters, TireParameters, TrailerParameters } from '../models/types.js';
-import { ModelTimingInfo, ModelType } from '../simulation/types.js';
+import { VehicleParameters, LongitudinalParameters, SteeringParameters, TireParameters, TrailerParameters } from '../models/types.ts';
+import { ModelTimingInfo, ModelType } from '../simulation/types.ts';
 
 export type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -331,7 +331,7 @@ export class ConfigManager {
     }
     const contentType = response.headers.get('content-type') ?? '';
     const body = await response.text();
-    const looksJson = contentType.includes('application/json') || path.endsWith('.json');
+    const looksJson = contentType.includes('application/json') || path.endsWith('.tson');
     if (looksJson) {
       try {
         return JSON.parse(body);

@@ -1,4 +1,4 @@
-import { TireParameters } from './types.js';
+import { TireParameters } from './types.ts';
 
 function sign(value: number): number {
   if (value > 0) return 1;

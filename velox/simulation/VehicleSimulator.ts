@@ -1,5 +1,5 @@
-import { LowSpeedSafety } from './LowSpeedSafety.js';
-import { VehicleParameters } from '../models/types.js';
+import { LowSpeedSafety } from './LowSpeedSafety.ts';
+import { VehicleParameters } from '../models/types.ts';
 
 export interface ModelInterface {
   init: (state: number[], params: VehicleParameters) => number[];

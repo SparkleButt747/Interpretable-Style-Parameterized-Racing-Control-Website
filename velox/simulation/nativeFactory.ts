@@ -1,7 +1,7 @@
-import { MBSimulationBackend, STSimulationBackend, STDSimulationBackend } from './vehicleBackends.js';
-import type { NativeDaemonFactory, NativeDaemonHandle } from './backend.js';
-import { ModelType } from './types.js';
-import { VehicleParameters } from '../models/types.js';
+import { MBSimulationBackend, STSimulationBackend, STDSimulationBackend } from './vehicleBackends.ts';
+import type { NativeDaemonFactory, NativeDaemonHandle } from './backend.ts';
+import { ModelType } from './types.ts';
+import { VehicleParameters } from '../models/types.ts';
 
 class TypeScriptNativeDaemon implements NativeDaemonHandle {
   constructor(

@@ -1,7 +1,7 @@
-import { ConfigManager } from '../io/ConfigManager.js';
-import packagedNativeFactory from './nativeFactory.js';
-import { ModelType } from './types.js';
-import type { SimulationTelemetry } from '../telemetry/index.js';
+import { ConfigManager } from '../io/ConfigManager.ts';
+import packagedNativeFactory from './nativeFactory.ts';
+import { ModelType } from './types.ts';
+import type { SimulationTelemetry } from '../telemetry/index.ts';
 
 export interface BackendSnapshot {
   state: number[];
