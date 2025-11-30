@@ -34,6 +34,12 @@ runs:
         corepack enable
         corepack prepare pnpm@${{ inputs.pnpm-version }} --activate
 
+    - name: Fallback install pnpm globally
+      shell: bash
+      run: |
+        npm install -g pnpm@${{ inputs.pnpm-version }}
+        pnpm --version
+
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile
