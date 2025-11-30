@@ -15,12 +15,10 @@ runs:
   using: composite
   steps:
     - name: Setup Node.js
-      # Use Node.js and enable dependency caching for pnpm.
+      # Use Node.js; cache removed to avoid pnpm lookup before install.
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
-        cache: pnpm
-        cache-dependency-path: pnpm-lock.yaml
 
     - name: Install pnpm
       uses: pnpm/action-setup@v4
