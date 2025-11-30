@@ -28,6 +28,12 @@ runs:
         version: ${{ inputs.pnpm-version }}
         run_install: false
 
+    - name: Ensure pnpm is available via corepack
+      shell: bash
+      run: |
+        corepack enable
+        corepack prepare pnpm@${{ inputs.pnpm-version }} --activate
+
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile
