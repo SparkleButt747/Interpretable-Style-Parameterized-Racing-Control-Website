@@ -15,28 +15,18 @@ runs:
   using: composite
   steps:
     - name: Setup Node.js
-      # Use Node.js; cache removed to avoid pnpm lookup before install.
+      # Use Node.js; enable pnpm cache but do not require pnpm to exist yet.
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
 
     - name: Install pnpm
       uses: pnpm/action-setup@v4
       with:
         version: ${{ inputs.pnpm-version }}
         run_install: false
-
-    - name: Ensure pnpm is available via corepack
-      shell: bash
-      run: |
-        corepack enable
-        corepack prepare pnpm@${{ inputs.pnpm-version }} --activate
-
-    - name: Fallback install pnpm globally
-      shell: bash
-      run: |
-        npm install -g pnpm@${{ inputs.pnpm-version }}
-        pnpm --version
 
     - name: Install dependencies
       shell: bash
