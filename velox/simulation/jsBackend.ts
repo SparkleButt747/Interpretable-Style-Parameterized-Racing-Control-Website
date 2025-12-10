@@ -136,12 +136,9 @@ export class JsSimulationBackend implements SimulationBackend {
 
   private computeSlipRatios(state: number[], speed: number): number[] {
     const denom = Math.max(speed, 1e-6);
-    if (this.options.model === ModelType.STD) {
-      const front = this.indexValue(state, 7);
-      const rear = this.indexValue(state, 8);
-      return [(front - speed) / denom, (rear - speed) / denom];
-    }
-    return [0, 0];
+    const front = this.indexValue(state, 7);
+    const rear = this.indexValue(state, 8);
+    return [(front - speed) / denom, (rear - speed) / denom];
   }
 
   private indexValue(state: number[], index?: number): number {
@@ -273,14 +270,11 @@ export class JsSimulationBackend implements SimulationBackend {
   }
 
   private estimateWheelSpeed(state: number[], front: boolean): number {
-    if (this.options.model === ModelType.STD) {
-      return front ? this.indexValue(state, 7) : this.indexValue(state, 8);
-    }
-    return this.simulator.speed();
+    return front ? this.indexValue(state, 7) : this.indexValue(state, 8);
   }
 }
 
-function buildSafetyIndices(model: ModelType, params: VehicleParameters): LowSpeedIndices {
+function buildSafetyIndices(_model: ModelType, params: VehicleParameters): LowSpeedIndices {
   let longitudinalIndex: number | undefined;
   let lateralIndex: number | undefined;
   let yawRateIndex: number | undefined;
@@ -288,27 +282,11 @@ function buildSafetyIndices(model: ModelType, params: VehicleParameters): LowSpe
   let wheelSpeedIndices: number[] | undefined;
   let steeringIndex: number | undefined;
 
-  switch (model) {
-    case ModelType.ST:
-      longitudinalIndex = 3;
-      yawRateIndex = 5;
-      slipIndex = 6;
-      steeringIndex = 2;
-      break;
-    case ModelType.STD:
-      longitudinalIndex = 3;
-      yawRateIndex = 5;
-      slipIndex = 6;
-      steeringIndex = 2;
-      wheelSpeedIndices = [7, 8];
-      break;
-    default:
-      longitudinalIndex = 3;
-      yawRateIndex = 5;
-      slipIndex = 6;
-      steeringIndex = 2;
-      break;
-  }
+  longitudinalIndex = 3;
+  yawRateIndex = 5;
+  slipIndex = 6;
+  steeringIndex = 2;
+  wheelSpeedIndices = [7, 8];
 
   const wheelbase = params.a + params.b;
   const rearLength = params.b;

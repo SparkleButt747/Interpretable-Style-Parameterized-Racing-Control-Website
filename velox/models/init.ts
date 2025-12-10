@@ -1,15 +1,5 @@
 import { VehicleParameters } from './types';
 
-export function initST(init: number[]): number[] {
-  const size = 7;
-  const state = new Array<number>(size).fill(0);
-  const copy = Math.min(init.length, size);
-  for (let i = 0; i < copy; i += 1) {
-    state[i] = init[i] ?? 0;
-  }
-  return state;
-}
-
 export function initSTD(init: number[], params: VehicleParameters): number[] {
   const baseSize = 7;
   const x0: number[] = new Array(baseSize).fill(0);

@@ -28,6 +28,25 @@ export type search = {
 
 const searchData = searchJson as SearchDocument[]
 
+export function withBasePath(path: string) {
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
+
+  const isExternal =
+    path.startsWith("http://") ||
+    path.startsWith("https://") ||
+    path.startsWith("//")
+
+  if (isExternal || !basePath || !path.startsWith("/")) {
+    return path
+  }
+
+  if (path.startsWith(basePath)) {
+    return path
+  }
+
+  return `${basePath}${path}`
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function memoize<T extends (...args: any[]) => any>(fn: T): T {
   const cache = new Map<string, ReturnType<T>>()

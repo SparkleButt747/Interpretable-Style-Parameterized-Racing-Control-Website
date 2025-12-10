@@ -17,12 +17,10 @@ function siblingConfigRoot(parameterRoot: string): string {
 
 function modelKey(model: ModelType): string {
   switch (model) {
-    case ModelType.ST:
-      return 'st';
     case ModelType.STD:
       return 'std';
     default:
-      return `${model}`;
+      return 'std';
   }
 }
 
@@ -290,7 +288,6 @@ export class ConfigManager {
   async loadModelTiming(model: ModelType): Promise<ModelTimingInfo> {
     await this.verifyRoots();
     const defaultTimings: Record<ModelType, ModelTimingInfo> = {
-      [ModelType.ST]: { nominal_dt: 0.01, max_dt: 0.02 },
       [ModelType.STD]: { nominal_dt: 0.01, max_dt: 0.01 },
     };
     const path = this.resolveConfigPath('model_timing.yaml');

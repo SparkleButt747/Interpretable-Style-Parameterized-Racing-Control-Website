@@ -1,5 +1,4 @@
 export enum ModelType {
-  ST = 'ST',
   STD = 'STD',
 }
 

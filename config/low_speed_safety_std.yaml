@@ -1,4 +1,4 @@
-# Model-specific low-speed safety thresholds for the single-track drift model.
+# Model-specific low-speed safety thresholds for the STD model.
 drift_enabled: true
 stop_speed_epsilon: 0.05
 normal:

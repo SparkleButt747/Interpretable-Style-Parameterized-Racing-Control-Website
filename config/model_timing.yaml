@@ -1,6 +1,3 @@
-st:
-  nominal_dt: 0.01
-  max_dt: 0.02
 std:
   nominal_dt: 0.01
   max_dt: 0.01

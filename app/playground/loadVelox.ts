@@ -5,10 +5,17 @@ import type { VehicleOption, VeloxConfigBundle } from "./types"
 
 const CONFIG_ROOT = "http://local.velox.config/"
 const PARAMETER_ROOT = "http://local.velox.parameters/"
+const BMW_VEHICLE_ID = 2
 
-async function readYamlDirectory(dir: string, prefix = ""): Promise<Record<string, string>> {
+async function readYamlDirectory(
+  dir: string,
+  prefix = "",
+  filter?: (name: string) => boolean
+): Promise<Record<string, string>> {
   const entries = await fs.readdir(dir)
-  const files = entries.filter((name) => name.toLowerCase().endsWith(".yaml"))
+  const files = entries
+    .filter((name) => name.toLowerCase().endsWith(".yaml"))
+    .filter((name) => (filter ? filter(name) : true))
 
   const results: Record<string, string> = {}
   for (const name of files) {
@@ -55,7 +62,12 @@ function extractVehicleMeta(content: string, fallbackLabel: string): Pick<Vehicl
   return { label, description }
 }
 
-async function loadVehicleOptions(dir: string): Promise<VehicleOption[]> {
+function vehicleIdFromName(name: string): number | null {
+  const idMatch = name.match(/parameters_vehicle(\d+)/i)
+  return idMatch ? Number(idMatch[1]) : null
+}
+
+async function loadVehicleOptions(dir: string, allowedIds?: Set<number>): Promise<VehicleOption[]> {
   const entries = await fs.readdir(dir)
   const yamlFiles = entries.filter((name) => name.toLowerCase().endsWith(".yaml"))
   const vehicles: VehicleOption[] = []
@@ -63,8 +75,10 @@ async function loadVehicleOptions(dir: string): Promise<VehicleOption[]> {
   for (const file of yamlFiles) {
     const fullPath = path.join(dir, file)
     const content = await fs.readFile(fullPath, "utf-8")
-    const idMatch = file.match(/parameters_vehicle(\d+)/i)
-    const id = idMatch ? Number(idMatch[1]) : vehicles.length + 1
+    const id = vehicleIdFromName(file) ?? vehicles.length + 1
+    if (allowedIds && !allowedIds.has(id)) {
+      continue
+    }
 
     const fallbackLabel = `Vehicle ${id}`
     const meta = extractVehicleMeta(content, fallbackLabel)
@@ -88,9 +102,6 @@ async function loadVehicleOptions(dir: string): Promise<VehicleOption[]> {
 function ensureModelTiming(configFiles: Record<string, string>): void {
   if (configFiles["model_timing.yaml"]) return
   configFiles["model_timing.yaml"] = [
-    "st:",
-    "  nominal_dt: 0.01",
-    "  max_dt: 0.02",
     "std:",
     "  nominal_dt: 0.01",
     "  max_dt: 0.01",
@@ -105,12 +116,18 @@ export async function loadVeloxBundle(): Promise<VeloxConfigBundle> {
   const configFiles = await readYamlDirectory(configDir)
   ensureModelTiming(configFiles)
 
+  const allowedVehicleIds = new Set<number>([BMW_VEHICLE_ID])
+
   const parameterFiles = {
     ...(await readYamlDirectory(path.join(parameterDir, "tire"), "tire/")),
-    ...(await readYamlDirectory(path.join(parameterDir, "vehicle"), "vehicle/")),
+    ...(await readYamlDirectory(
+      path.join(parameterDir, "vehicle"),
+      "vehicle/",
+      (name) => allowedVehicleIds.has(vehicleIdFromName(name) ?? -1)
+    )),
   }
 
-  const vehicles = await loadVehicleOptions(path.join(parameterDir, "vehicle"))
+  const vehicles = await loadVehicleOptions(path.join(parameterDir, "vehicle"), allowedVehicleIds)
 
   return {
     configRoot: CONFIG_ROOT,

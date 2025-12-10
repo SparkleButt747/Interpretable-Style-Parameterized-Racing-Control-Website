@@ -2,8 +2,11 @@ import Image from "next/image"
 import { Link } from "lib/transition"
 
 import { Settings } from "@/types/settings"
+import { withBasePath } from "@/lib/utils"
 
 export function Logo() {
+  const logoSrc = withBasePath(Settings.siteicon)
+
   return (
     <Link
       href="/"
@@ -12,7 +15,7 @@ export function Logo() {
       className="flex items-center gap-2.5"
     >
       <Image
-        src={Settings.siteicon}
+        src={logoSrc}
         alt={`${Settings.title} main logo`}
         title={`${Settings.title} main logo`}
         aria-label={`${Settings.title} main logo`}

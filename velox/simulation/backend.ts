@@ -114,7 +114,7 @@ export class HybridSimulationBackend implements SimulationBackend {
     const factory = this.options.nativeFactory ?? packagedNativeFactory;
 
     if (!factory) {
-      throw new Error('HybridSimulationBackend requires a native backend factory for ST/STD models');
+      throw new Error('HybridSimulationBackend requires a native backend factory for the STD model');
     }
 
     try {
@@ -217,12 +217,10 @@ function ensureObject(value: unknown): Record<string, unknown> {
 
 function modelKey(model: ModelType): string {
   switch (model) {
-    case ModelType.ST:
-      return 'st';
     case ModelType.STD:
       return 'std';
     default:
-      return `${model}`;
+      return 'std';
   }
 }
 
@@ -288,13 +286,6 @@ function defaultLowSpeedSafety(): LowSpeedSafetyConfig {
 
 function defaultLossOfControlConfig(model: ModelType): LossOfControlConfig {
   switch (model) {
-    case ModelType.ST:
-      return {
-        yaw_rate: { threshold: 1.2, rate: 9 },
-        slip_angle: { threshold: 0.45, rate: 4.5 },
-        lateral_accel: { threshold: 6.5, rate: 12 },
-        slip_ratio: { threshold: 0.18, rate: 6 },
-      };
     case ModelType.STD:
       return {
         yaw_rate: { threshold: 1.4, rate: 10 },
@@ -304,10 +295,10 @@ function defaultLossOfControlConfig(model: ModelType): LossOfControlConfig {
       };
     default:
       return {
-        yaw_rate: { threshold: 1.2, rate: 9 },
-        slip_angle: { threshold: 0.45, rate: 4.5 },
-        lateral_accel: { threshold: 6.5, rate: 12 },
-        slip_ratio: { threshold: 0.18, rate: 6 },
+        yaw_rate: { threshold: 1.4, rate: 10 },
+        slip_angle: { threshold: 0.8, rate: 5 },
+        lateral_accel: { threshold: 7.0, rate: 14 },
+        slip_ratio: { threshold: 0.5, rate: 7 },
       };
   }
 }

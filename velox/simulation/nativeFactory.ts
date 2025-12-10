@@ -1,4 +1,4 @@
-import { STSimulationBackend, STDSimulationBackend, type VehicleBackendOptions } from './vehicleBackends';
+import { STDSimulationBackend, type VehicleBackendOptions } from './vehicleBackends';
 import type { NativeDaemonFactory, NativeDaemonHandle } from './backend';
 import { ModelType } from './types';
 import { VehicleParameters } from '../models/types';
@@ -7,7 +7,7 @@ import type { LossOfControlConfig } from './LossOfControlDetector';
 
 class TypeScriptNativeDaemon implements NativeDaemonHandle {
   constructor(
-    private readonly backend: STSimulationBackend | STDSimulationBackend
+    private readonly backend: STDSimulationBackend
   ) {}
 
   reset(state: number[], dt: number): void {
@@ -29,12 +29,10 @@ class TypeScriptNativeDaemon implements NativeDaemonHandle {
 
 function modelKey(model: ModelType): string {
   switch (model) {
-    case ModelType.ST:
-      return 'st';
     case ModelType.STD:
       return 'std';
     default:
-      return `${model}`;
+      return 'std';
   }
 }
 
@@ -53,7 +51,7 @@ function selectModelConfig<T extends Record<string, any>>(config: T, model: Mode
 /**
  * Packaged native daemon factory implemented purely in TypeScript. This mirrors
  * the C++ solvers and safety logic so that HybridSimulationBackend can run the
- * ST and STD models without external bindings.
+ * STD model without external bindings.
  */
 export const packagedNativeFactory: NativeDaemonFactory = async ({
   model,
@@ -76,14 +74,12 @@ export const packagedNativeFactory: NativeDaemonFactory = async ({
   return new TypeScriptNativeDaemon(backend);
 };
 
-function createModelBackend(options: VehicleBackendOptions & { model: ModelType }): STSimulationBackend | STDSimulationBackend {
+function createModelBackend(options: VehicleBackendOptions & { model: ModelType }): STDSimulationBackend {
   switch (options.model) {
-    case ModelType.ST:
-      return new STSimulationBackend(options);
     case ModelType.STD:
       return new STDSimulationBackend(options);
     default:
-      return new STSimulationBackend(options);
+      return new STDSimulationBackend(options);
   }
 }
 

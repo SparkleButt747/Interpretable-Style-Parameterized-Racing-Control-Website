@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import { FiAlertTriangle, FiRefreshCcw, FiTrendingUp } from "react-icons/fi"
 
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,8 @@ type ControlState = {
   steering: number
 }
 
+type InputSample = ControlState & { t: number }
+
 const trackScalePx = 12
 const trackSizePx = 620
 const defaultLimits = new UserInputLimits({
@@ -39,11 +41,6 @@ const defaultLimits = new UserInputLimits({
 const DEG_PER_RAD = 180 / Math.PI
 
 const toDegrees = (radians: number) => radians * DEG_PER_RAD
-const normalizeDeg = (degrees: number) => ((degrees % 360) + 360) % 360
-const shortestDeltaDeg = (a: number, b: number) => {
-  const diff = normalizeDeg(a - b)
-  return diff > 180 ? diff - 360 : diff
-}
 const worldToScreenDeg = (radians: number) => -toDegrees(radians)
 
 function createLocalFetcher(bundle: VeloxConfigBundle): Fetcher {
@@ -112,23 +109,27 @@ function renderSummary(vehicle: VehicleOption): string {
 }
 
 export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
-  const [selectedVehicle, setSelectedVehicle] = useState<number>(bundle.vehicles[0]?.id ?? 1)
-  const [model, setModel] = useState<ModelType>(ModelType.ST)
-  const [driftEnabled, setDriftEnabled] = useState(false)
+  const primaryVehicle = bundle.vehicles[0]
+  const vehicleId = primaryVehicle?.id ?? 2
+  const model = ModelType.STD
+  const driftGuardEnabled = true
+
   const [telemetry, setTelemetry] = useState<SimulationTelemetry>(new SimulationTelemetryState())
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">("idle")
   const [error, setError] = useState<string | null>(null)
   const [trace, setTrace] = useState<Array<{ x: number; y: number }>>([])
+  const [inputHistory, setInputHistory] = useState<InputSample[]>([])
   const [trackSize, setTrackSize] = useState({ width: trackSizePx, height: (trackSizePx * 3) / 4 })
 
   const loopCancelRef = useRef<(() => void) | null>(null)
   const simRef = useRef<SimulationDaemon | null>(null)
   const inputRef = useRef<ControlState>({ throttle: 0, brake: 0, steering: 0 })
   const lastFrameRef = useRef<number>(0)
-  const driftRef = useRef<boolean>(false)
+  const driftRef = useRef<boolean>(driftGuardEnabled)
   const resetRef = useRef<(() => void) | null>(null)
   const trackRef = useRef<HTMLDivElement>(null)
-  const headingDebug = process.env.NODE_ENV !== "production"
+  const inputHistoryRef = useRef<InputSample[]>([])
+  const inputHistoryWindowSeconds = 12
 
   const fetcher = useMemo(() => createLocalFetcher(bundle), [bundle])
 
@@ -151,9 +152,6 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
       const key = event.key.toLowerCase()
       if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
         event.preventDefault()
-      }
-      if (key === "shift" && !event.repeat) {
-        setDriftEnabled((prev) => !prev)
       }
       if (key === "r" && !event.repeat) {
         event.preventDefault()
@@ -180,11 +178,23 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
     loopCancelRef.current = null
   }, [])
 
+  const recordInputHistory = useCallback(
+    (timestampSec: number) => {
+      const windowStart = timestampSec - inputHistoryWindowSeconds
+      const sample: InputSample = { t: timestampSec, ...inputRef.current }
+      const nextHistory = [...inputHistoryRef.current, sample].filter((point) => point.t >= windowStart)
+      inputHistoryRef.current = nextHistory
+      setInputHistory(nextHistory)
+    },
+    [inputHistoryWindowSeconds]
+  )
+
   const startLoop = useCallback(() => {
     stopLoop()
     let cancelled = false
     const tick = async (time: number) => {
       if (cancelled || !simRef.current) return
+      const timestampSec = time / 1000
       const dtCandidate = (time - lastFrameRef.current) / 1000
       const dt = Math.min(Math.max(dtCandidate, 0.005), 0.05)
       lastFrameRef.current = time
@@ -197,7 +207,7 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
           },
           steering_nudge: inputRef.current.steering,
           drift_toggle: driftRef.current ? 1 : 0,
-          timestamp: time / 1000,
+          timestamp: timestampSec,
           dt,
         })
         setTelemetry(cloneTelemetry(next))
@@ -205,6 +215,7 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
           const nextTrace = [...prev, { x: next.pose.x, y: next.pose.y }]
           return nextTrace.slice(-140)
         })
+        recordInputHistory(timestampSec)
         setStatus((prev) => (prev === "ready" ? prev : "ready"))
       } catch (err) {
         const message = err instanceof Error ? err.message : "Simulation step failed"
@@ -225,18 +236,20 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
       cancelled = true
       if (frame) cancelAnimationFrame(frame)
     }
-  }, [stopLoop])
+  }, [recordInputHistory, stopLoop])
 
   const rebuildDaemon = useCallback(async () => {
     stopLoop()
     setStatus("loading")
     setError(null)
     setTrace([])
+    inputHistoryRef.current = []
+    setInputHistory([])
 
     const configManager = new ConfigManager(bundle.configRoot, bundle.parameterRoot, fetcher)
     const daemon = new SimulationDaemon({
       model,
-      vehicle_id: selectedVehicle,
+      vehicle_id: vehicleId,
       control_mode: ControlMode.Keyboard,
       drift_enabled: driftRef.current,
       config_manager: configManager,
@@ -255,19 +268,12 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
       setError(message)
       setStatus("error")
     }
-  }, [bundle.configRoot, bundle.parameterRoot, fetcher, model, selectedVehicle, startLoop, stopLoop])
+  }, [bundle.configRoot, bundle.parameterRoot, fetcher, model, startLoop, stopLoop, vehicleId])
 
   useEffect(() => {
     rebuildDaemon()
     return () => stopLoop()
   }, [rebuildDaemon, stopLoop])
-
-  useEffect(() => {
-    driftRef.current = driftEnabled
-    if (simRef.current) {
-      simRef.current.setDriftEnabled(driftEnabled)
-    }
-  }, [driftEnabled])
 
   useEffect(() => {
     const node = trackRef.current
@@ -296,14 +302,8 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
   const headingDeg = worldToScreenDeg(pose.yaw)
   const speed = telemetry.velocity.speed ?? 0
   const accel = telemetry.acceleration.longitudinal ?? 0
-  const slipDeg = toDegrees(telemetry.traction.slip_angle ?? 0)
   const slipVisualDeg = worldToScreenDeg(telemetry.traction.slip_angle ?? 0) * 0.1
   const renderRotationDeg = headingDeg
-  const velocityHeadingDeg =
-    speed > 0.05 ? worldToScreenDeg(Math.atan2(telemetry.velocity.global_y, telemetry.velocity.global_x)) : null
-  const headingErrorDeg = shortestDeltaDeg(renderRotationDeg, headingDeg)
-  const travelHeadingErrorDeg =
-    velocityHeadingDeg === null ? null : shortestDeltaDeg(velocityHeadingDeg, headingDeg)
   const carScale = 0.9 + Math.min(Math.abs(speed) / 24, 0.45)
   const statusTone =
     status === "ready"
@@ -313,51 +313,25 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
         : "bg-amber-100 text-amber-700 dark:bg-amber-400/20 dark:text-amber-200"
   const statusLabel =
     status === "ready" ? "Live" : status === "loading" ? "Loading..." : status === "error" ? "Error" : "Paused"
-
-  useEffect(() => {
-    if (!headingDebug) return
-    const headingMismatch = Math.abs(headingErrorDeg)
-    const travelMismatch = travelHeadingErrorDeg === null ? null : Math.abs(travelHeadingErrorDeg)
-    if (headingMismatch > 0.5 || (travelMismatch !== null && travelMismatch > 10)) {
-      console.debug("[Velox Playground] heading check", {
-        poseYawRad: pose.yaw,
-        poseYawDeg: yawDeg,
-        screenHeadingDeg: headingDeg,
-        renderRotationDeg,
-        slipDeg,
-        slipVisualDeg,
-        headingErrorDeg,
-        velocityHeadingDeg,
-        travelHeadingErrorDeg,
-      })
-    }
-  }, [
-    headingDebug,
-    headingErrorDeg,
-    travelHeadingErrorDeg,
-    pose.yaw,
-    yawDeg,
-    headingDeg,
-    renderRotationDeg,
-    slipDeg,
-    slipVisualDeg,
-    velocityHeadingDeg,
-  ])
+  const vehicleSummary = primaryVehicle ? renderSummary(primaryVehicle) : ""
 
   const handleReset = useCallback(async () => {
     if (!simRef.current) return
     stopLoop()
+    driftRef.current = driftGuardEnabled
+    inputHistoryRef.current = []
+    setInputHistory([])
     await simRef.current.reset({
-      vehicle_id: selectedVehicle,
+      vehicle_id: vehicleId,
       model,
-      drift_enabled: driftEnabled,
+      drift_enabled: driftGuardEnabled,
       control_mode: ControlMode.Keyboard,
     })
     const snap = await simRef.current.snapshot()
     setTelemetry(cloneTelemetry(snap.telemetry))
     setTrace([])
     startLoop()
-  }, [driftEnabled, model, selectedVehicle, startLoop, stopLoop])
+  }, [driftGuardEnabled, model, startLoop, stopLoop, vehicleId])
 
   useEffect(() => {
     resetRef.current = handleReset
@@ -371,8 +345,9 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
             <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">Velox Playground</p>
             <h2 className="text-3xl font-semibold text-slate-50">Keyboard-in-the-loop vehicle dynamics</h2>
             <p className="text-sm text-slate-300">
-              Choose a vehicle dataset, pick a dynamics model, and drive with <kbd className="rounded bg-white/10 px-1.5">W/S</kbd>{" "}
-              for throttle/brake and <kbd className="rounded bg-white/10 px-1.5">A/D</kbd> for steering.
+              Drive the BMW 320i dataset with the locked STD dynamics model. Use{" "}
+              <kbd className="rounded bg-white/10 px-1.5">W/S</kbd> for throttle/brake and{" "}
+              <kbd className="rounded bg-white/10 px-1.5">A/D</kbd> for steering; drift guard stays enabled in code.
             </p>
           </div>
           <div className="flex items-center gap-3 text-xs text-slate-200">
@@ -395,7 +370,7 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
               <div>
                 <p className="text-sm text-slate-400">Track space</p>
                 <p className="text-lg font-semibold text-white">
-                  {selectedVehicle ? `Vehicle ${selectedVehicle}` : "Vehicle"} · {model}
+                  {primaryVehicle?.label ?? "BMW 320i"} · {model}
                 </p>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-200">
@@ -416,44 +391,6 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
                 }}
               />
               <div className="absolute inset-8 border border-white/5" />
-              {headingDebug && (
-                <div className="absolute left-3 top-3 space-y-1 rounded-lg bg-slate-950/80 px-3 py-2 text-[11px] text-emerald-50 ring-1 ring-white/10 backdrop-blur">
-                  <div className="flex items-center justify-between gap-3">
-                    <span>World yaw</span>
-                    <span className="font-mono">{yawDeg.toFixed(1)}°</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Screen yaw</span>
-                    <span className="font-mono">{headingDeg.toFixed(1)}°</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Render rot</span>
-                    <span className="font-mono">{renderRotationDeg.toFixed(1)}°</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Slip</span>
-                    <span className="font-mono">
-                      {slipDeg.toFixed(2)}° / {slipVisualDeg.toFixed(2)}°
-                    </span>
-                  </div>
-                  {velocityHeadingDeg !== null && (
-                    <div className="flex items-center justify-between gap-3">
-                      <span>Velocity</span>
-                      <span className="font-mono">{velocityHeadingDeg.toFixed(1)}°</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Heading Δ</span>
-                    <span className="font-mono">{headingErrorDeg.toFixed(2)}°</span>
-                  </div>
-                  {travelHeadingErrorDeg !== null && (
-                    <div className="flex items-center justify-between gap-3">
-                      <span>Travel Δ</span>
-                      <span className="font-mono">{travelHeadingErrorDeg.toFixed(2)}°</span>
-                    </div>
-                  )}
-                </div>
-              )}
               {trace.map((point, idx) => {
                 const x = originX + point.x * trackScalePx
                 const y = originY - point.y * trackScalePx
@@ -552,90 +489,32 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
           <div className="space-y-4 rounded-2xl border border-white/10 bg-slate-950/40 p-4 shadow-inner ring-1 ring-white/5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm text-slate-400">Vehicle & model</p>
-                <p className="text-lg font-semibold text-white">Loaded directly from config/parameters</p>
+                <p className="text-sm text-slate-400">BMW 320i · STD dynamics</p>
+                <p className="text-lg font-semibold text-white">Parameters loaded from config/parameters</p>
+                <p className="text-sm text-slate-300">Drift guard stays enabled; restart to clear the trace.</p>
               </div>
               <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
                 <FiRefreshCcw className="h-4 w-4" />
                 Restart run
               </Button>
             </div>
-            <LayoutGroup>
-              <div className="grid gap-3 md:grid-cols-2">
-                {bundle.vehicles.map((vehicle) => {
-                  const active = vehicle.id === selectedVehicle
-                  return (
-                    <motion.button
-                      key={vehicle.id}
-                      layout
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.99 }}
-                      onClick={() => setSelectedVehicle(vehicle.id)}
-                      className={cn(
-                        "w-full rounded-xl border p-4 text-left transition-colors",
-                        active
-                          ? "border-emerald-400/70 bg-emerald-400/10 shadow-[0_10px_40px_rgba(16,185,129,0.25)]"
-                          : "border-white/10 bg-white/5 hover:border-white/20"
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs uppercase tracking-widest text-slate-300">Vehicle {vehicle.id}</p>
-                          <p className="text-base font-semibold text-white">{vehicle.label}</p>
-                        </div>
-                        <span
-                          className={cn(
-                            "rounded-full px-3 py-1 text-xs font-semibold",
-                            active ? "bg-emerald-500/20 text-emerald-100" : "bg-white/10 text-white"
-                          )}
-                        >
-                          {active ? "Selected" : "Load"}
-                        </span>
-                      </div>
-                      <p className="mt-2 line-clamp-2 text-sm text-slate-300">{vehicle.description}</p>
-                      {renderSummary(vehicle) && (
-                        <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-                          {renderSummary(vehicle)}
-                        </p>
-                      )}
-                    </motion.button>
-                  )
-                })}
-              </div>
-            </LayoutGroup>
 
             <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Dynamics model</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {[ModelType.ST, ModelType.STD].map((option) => (
-                  <motion.button
-                    key={option}
-                    whileHover={{ y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setModel(option)}
-                    className={cn(
-                      "rounded-lg px-3 py-1 text-sm font-semibold transition-colors",
-                      model === option
-                        ? "bg-sky-500/20 text-sky-100 ring-1 ring-sky-400/60"
-                        : "bg-white/10 text-white hover:bg-white/20"
-                    )}
-                  >
-                    {option}
-                  </motion.button>
-                ))}
-                <motion.button
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setDriftEnabled((prev) => !prev)}
-                  className={cn(
-                    "rounded-lg px-3 py-1 text-sm font-semibold transition-colors",
-                    driftEnabled
-                      ? "bg-emerald-500/20 text-emerald-100 ring-1 ring-emerald-400/60"
-                      : "bg-white/10 text-white hover:bg-white/20"
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Vehicle snapshot</p>
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-base font-semibold text-white">{primaryVehicle?.label ?? "BMW 320i"}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-slate-300">
+                    {primaryVehicle?.description ?? "Single vehicle dataset kept for this playground."}
+                  </p>
+                  {vehicleSummary && (
+                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">{vehicleSummary}</p>
                   )}
-                >
-                  {driftEnabled ? "Drift guard on" : "Drift guard off"}
-                </motion.button>
+                </div>
+                <div className="flex flex-col items-end gap-2 text-xs font-semibold text-white">
+                  <span className="rounded-full bg-sky-500/20 px-3 py-1 text-sky-100">STD model</span>
+                  <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-emerald-100">Drift guard on</span>
+                </div>
               </div>
             </div>
 
@@ -651,27 +530,42 @@ export function VeloxPlayground({ bundle }: { bundle: VeloxConfigBundle }) {
                   hint={inputRef.current.steering.toFixed(1)}
                 />
               </div>
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <InputHistoryGraph
+                  label="Throttle"
+                  samples={inputHistory}
+                  accessor={(sample) => sample.throttle}
+                  range={[0, 1]}
+                  color="#34d399"
+                />
+                <InputHistoryGraph
+                  label="Brake"
+                  samples={inputHistory}
+                  accessor={(sample) => sample.brake}
+                  range={[0, 1]}
+                  color="#fb7185"
+                />
+                <InputHistoryGraph
+                  label="Steering"
+                  samples={inputHistory}
+                  accessor={(sample) => sample.steering}
+                  range={[-1, 1]}
+                  color="#38bdf8"
+                  formatter={(value) => value.toFixed(2)}
+                />
+              </div>
               <p className="mt-2 text-xs text-slate-300">
-                Hold <kbd className="rounded bg-white/10 px-1">Shift</kbd> to toggle drift guard, tap{" "}
-                <kbd className="rounded bg-white/10 px-1">R</kbd> if you need a fresh reset.
+                Tap <kbd className="rounded bg-white/10 px-1">R</kbd> to reset the run. Drift guard is locked on by default.
               </p>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-3">
               <InfoPanel
                 title="Controller output"
                 rows={[
                   { label: "Drive force", value: telemetry.controller.drive_force.toFixed(1) + " N" },
                   { label: "Brake force", value: telemetry.controller.brake_force.toFixed(1) + " N" },
                   { label: "SOC", value: ((telemetry.powertrain.soc ?? 0) * 100).toFixed(0) + "%" },
-                ]}
-              />
-              <InfoPanel
-                title="Safety"
-                rows={[
-                  { label: "Stage", value: telemetry.safety_stage },
-                  { label: "Detector", value: telemetry.detector_severity.toFixed(2) },
-                  { label: "Low speed", value: telemetry.low_speed_engaged ? "Engaged" : "Idle" },
                 ]}
               />
             </div>
@@ -736,6 +630,61 @@ function ControlBar({
           transition={{ type: "spring", stiffness: 180, damping: 20 }}
         />
       </div>
+    </div>
+  )
+}
+
+function InputHistoryGraph({
+  label,
+  samples,
+  accessor,
+  range,
+  color,
+  formatter = (value: number) => `${Math.round(value * 100)}%`,
+}: {
+  label: string
+  samples: InputSample[]
+  accessor: (sample: InputSample) => number
+  range: [number, number]
+  color: string
+  formatter?: (value: number) => string
+}) {
+  const width = 160
+  const height = 72
+  const [min, max] = range
+  const start = samples[0]?.t ?? 0
+  const end = samples[samples.length - 1]?.t ?? start + 1
+  const span = Math.max(end - start, 1)
+  const latestValue = samples.length ? accessor(samples[samples.length - 1]) : 0
+  const normalize = (value: number) => {
+    const clamped = Math.min(max, Math.max(min, value))
+    return (clamped - min) / Math.max(max - min, 1e-6)
+  }
+  const coords = samples.map((sample) => {
+    const x = ((sample.t - start) / span) * width
+    const y = height - normalize(accessor(sample)) * height
+    return { x, y }
+  })
+  const path = coords.length
+    ? coords.map((pt, idx) => `${idx === 0 ? "M" : "L"}${pt.x.toFixed(2)},${pt.y.toFixed(2)}`).join(" ")
+    : `M0,${height / 2} L${width},${height / 2}`
+  const zeroY = height - normalize(0) * height
+  const showZero = zeroY >= 0 && zeroY <= height
+  const lastPoint = coords[coords.length - 1]
+
+  return (
+    <div className="rounded-lg border border-white/10 bg-slate-950/30 p-3">
+      <div className="flex items-center justify-between text-xs text-slate-200">
+        <span className="uppercase tracking-[0.2em] text-slate-400">{label}</span>
+        <span className="font-semibold text-white">{formatter(latestValue)}</span>
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} className="mt-2 h-24 w-full">
+        {showZero && (
+          <line x1={0} y1={zeroY} x2={width} y2={zeroY} stroke="rgba(255,255,255,0.35)" strokeDasharray="4 4" />
+        )}
+        <path d={path} fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" />
+        {lastPoint && <circle cx={lastPoint.x} cy={lastPoint.y} r={3.5} fill={color} stroke="rgba(0,0,0,0.2)" />}
+      </svg>
     </div>
   )
 }
