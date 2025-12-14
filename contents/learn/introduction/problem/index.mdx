@@ -1,0 +1,85 @@
+---
+title: The Problem
+description: Placeholder for the problem statement and a naive baseline that fails.
+keywords: ["problem", "baseline", "introduction"]
+---
+
+<div className="mt-2 text-base leading-7 text-muted-foreground max-w-2xl">
+  Every $\Delta t$, we map the current state and a reference path to two commands:
+  <strong> steering</strong> $\delta$ and <strong>longitudinal</strong> $a_x$.
+  The goal is to finish a lap quickly while respecting limits.
+</div>
+
+<Separator className="my-8" />
+
+## The control interface (plain)
+
+**Inputs we output**
+- Steering $\delta$
+- Longitudinal command $a_x$ (throttle/brake)
+
+**What we assume we know**
+- Pose and speed $(x,y,\psi,v)$
+- A reference path $\gamma(s)$ (centerline / waypoints)
+
+We can write the goal as a policy:
+$$
+\pi:\{x,y,\psi,v,\gamma\}\rightarrow\{\delta,a_x\}.
+$$
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [DIAGRAM PLACEHOLDER] Path + car pose + lookahead target + heading error arrow
+</div>
+
+<Separator className="my-10" />
+
+## A naive baseline (intentionally crude)
+
+**Idea:** “Look where you want to go.”
+
+1) Choose a target point on the path ahead (lookahead)  
+2) Compute heading error to that target  
+3) Steer proportionally to that error  
+4) Slow down if the error is large  
+
+Example rule sketches:
+$$
+\delta = \text{clip}(k_\delta \cdot e_\psi,\; -\delta_{\max},\; \delta_{\max})
+$$
+
+$$
+a_x = a_{\max}\left(1 - \left|\frac{e_\psi}{e_{\psi,\max}}\right|\right)
+$$
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
+  [INTERACTIVE PLACEHOLDER] Naive controller demo (toggle on/off)
+  <div className="mt-2 opacity-70">Sliders: lookahead $L$, steer gain $k_\delta$, “slowdown vs error” strength</div>
+</div>
+
+<Separator className="my-10" />
+
+## Why it fails (and why that’s useful)
+
+This baseline fails in predictable ways:
+
+- Small lookahead $\Rightarrow$ oscillation (chatter)
+- Large lookahead $\Rightarrow$ lazy turns (wide apex / late response)
+- It ignores that **tighter curvature implies a lower feasible speed**
+- Commands can be rough without rate/jerk shaping
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [GIF PLACEHOLDER] Three clips: small-$L$ oscillation • large-$L$ lazy apex • too-fast corner entry
+</div>
+
+<Separator className="my-10" />
+
+## What we’ll do next
+
+We’ll keep the **spirit** of the baseline—simple, predictable rules—but add:
+
+1) Preview/lookahead done properly  
+2) Curvature-aware target speed  
+3) Gain scheduling and smoothing  
+4) Explicit style knobs
+
+

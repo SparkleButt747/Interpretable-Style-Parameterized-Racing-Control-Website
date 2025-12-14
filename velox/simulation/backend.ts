@@ -2,6 +2,7 @@ import { ConfigManager } from '../io/ConfigManager';
 import packagedNativeFactory from './nativeFactory';
 import { ModelType } from './types';
 import type { SimulationTelemetry } from '../telemetry/index';
+import { JsSimulationBackend } from './jsBackend';
 
 export interface BackendSnapshot {
   state: number[];
@@ -40,10 +41,10 @@ interface LossOfControlChannelThresholds {
 }
 
 interface LossOfControlConfig {
-  yaw_rate?: LossOfControlChannelThresholds;
-  slip_angle?: LossOfControlChannelThresholds;
-  lateral_accel?: LossOfControlChannelThresholds;
-  slip_ratio?: LossOfControlChannelThresholds;
+  yaw_rate: LossOfControlChannelThresholds;
+  slip_angle: LossOfControlChannelThresholds;
+  lateral_accel: LossOfControlChannelThresholds;
+  slip_ratio: LossOfControlChannelThresholds;
 }
 
 interface LowSpeedRegimeConfig {
@@ -111,6 +112,17 @@ export class HybridSimulationBackend implements SimulationBackend {
       };
     });
 
+    if (model === ModelType.ST) {
+      this.delegate = new JsSimulationBackend({
+        model,
+        params: fallbackDefaults.vehicle as any,
+        lowSpeed: fallbackDefaults.lowSpeed,
+        lossConfig: fallbackDefaults.loss,
+        driftEnabled: false,
+      });
+      return;
+    }
+
     const factory = this.options.nativeFactory ?? packagedNativeFactory;
 
     if (!factory) {
@@ -133,7 +145,7 @@ export class HybridSimulationBackend implements SimulationBackend {
 
   private async loadConfigs(configManager: ConfigManager, vehicleId: number, model: ModelType) {
     const [vehicle, lowSpeedDoc, lossDoc] = await Promise.all([
-      configManager.loadVehicleParameters(vehicleId),
+      configManager.loadModelParameters(vehicleId, model),
       configManager.loadLowSpeedSafetyConfig(model),
       configManager.loadLossOfControlDetectorConfig(model),
     ]);
@@ -217,6 +229,8 @@ function ensureObject(value: unknown): Record<string, unknown> {
 
 function modelKey(model: ModelType): string {
   switch (model) {
+    case ModelType.ST:
+      return 'st';
     case ModelType.STD:
       return 'std';
     default:
@@ -286,6 +300,13 @@ function defaultLowSpeedSafety(): LowSpeedSafetyConfig {
 
 function defaultLossOfControlConfig(model: ModelType): LossOfControlConfig {
   switch (model) {
+    case ModelType.ST:
+      return {
+        yaw_rate: { threshold: 1e6, rate: 1e6 },
+        slip_angle: { threshold: 1e6, rate: 1e6 },
+        lateral_accel: { threshold: 1e6, rate: 1e6 },
+        slip_ratio: { threshold: 1e6, rate: 1e6 },
+      };
     case ModelType.STD:
       return {
         yaw_rate: { threshold: 1.4, rate: 10 },

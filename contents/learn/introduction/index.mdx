@@ -1,204 +1,72 @@
 ---
-title: Introduction And What You'll Learn
-description: Overview of the Interpretable Style-Parameterized Racing Control learning journey.
-keywords: ["style-parameterized control", "racing tutorial", "introduction"]
+title: Introduction
+description: why this exists, what you'll learn, and challenge mode.
+keywords: ["introduction", "overview", "challenge mode"]
 ---
 
-{/* Introduction Page — Interpretable Style-Parameter Racing Control vs. MPCC
-   Author: Randev Ranjit
-   Notes: Drop into app/(learn)/introduction/page.mdx (or similar). 
-   Uses MDX with React components. Replace placeholders with real components later.
-*/}
-
-import { Separator } from "@/components/ui/separator";
-// import HeroTwoNumbers from "@/components/intro/HeroTwoNumbers";
-// import LookaheadDemo from "@/components/intro/LookaheadDemo";
-// import CurvatureSpeedStrip from "@/components/intro/CurvatureSpeedStrip";
-// import StyleKnobCards from "@/components/intro/StyleKnobCards";
-// import GhostTeaser from "@/components/intro/GhostTeaser";
-// import BeyondRacingStrip from "@/components/intro/BeyondRacingStrip";
-// import CTA from "@/components/intro/CTA";
-
-export const metadata = {
-  title: "Introduction — Style-Parameterized Control vs MPCC",
-  description:
-    "Two numbers, every few milliseconds. Learn preview, curvature-to-speed, gain scheduling, smoothness, and interpretable driving style. Then race the ghost.",
-};
-
 <div className="mt-6 mb-10 text-base leading-7 text-muted-foreground max-w-2xl">
-  Two numbers, every few milliseconds. You output <strong>steering</strong> and
-  <strong> throttle/brake</strong>. The rest is choosing them well given where
-  you are, where the path goes, and how much grip you have.
+  You output <strong>two numbers</strong> every few milliseconds:
+  <strong> steering</strong> and <strong>throttle/brake</strong>.
+  Everything else is choosing them well—given the path, the limits, and the style you want.
 </div>
 
-{/* ---------------------------------------------------- */}
-{/* HERO: Two-number concept (animated) */}
-{/* <HeroTwoNumbers /> */}
-<div className="mb-12 rounded-2xl border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-  [HERO PLACEHOLDER] Two-number looped animation here
-  <br />
-  <span className="opacity-70">(<em>Steer</em> &amp; <em>Throttle</em> sliders +
-  straight → bend → exit sequence)</span>
+<div className="mb-10 rounded-2xl border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
+  [HERO PLACEHOLDER] Loop animation: state → controller → inputs → motion → repeat
+  <div className="mt-2 opacity-70">
+    (Overlay: steering $\delta$, longitudinal $a_x$, and a “style knob” panel)
+  </div>
 </div>
-
-<Separator className="my-8" />
-
-## What You’ll Learn
-
-### Vehicle Control Problem (VCP) — plain terms
-
-You control two numbers every tick: **steering** (wheel angle) and **longitudinal command** (throttle/brake).  
-The goal is to follow a path **quickly** and **safely**. We’ll show how simple rules create predictable behaviour—and where they fail.
-
-### Core ideas you’ll recognise when you see them
-
-- **Preview / Lookahead** — aim ahead, not at your feet. Too small → twitchy; too large → lazy.  
-- **Curvature → Speed** — tighter bend ⇒ lower feasible speed (friction limit).  
-- **Gain Scheduling** — high speed demands softer steering gains.  
-- **Oscillations & Noise** — why “just steer to the checkpoint” chatters.  
-- **Smoothness vs Lap Time** — jerk/command-rate trade-offs.
-
-### From lane-keeping to racing
-
-We start with **“don’t leave the lane,”** then layer speed planning and style.  
-Racing adds: optimizing progress, cutting apexes intelligently, and living near the friction limit.
-
-### Two controller mindsets
-
-- **Style-Parameterized Controller** — a small, interpretable set of knobs
-  (**apex offset**, **entry/exit bias**, **risk**, **smoothness**).
-  Turn a knob → predict the effect.
-- **MPCC (foil)** — powerful optimal control with weights and constraints.
-  Great results; **style is implicit**.
-
-### Challenge mode: race the ghost
-
-Tune style parameters and try to beat two baselines:
-a **conservative preview controller** and an **MPCC-like ghost**.
-Same track, same start. Your job: pick parameters that fit the corner sequence.
-
-### Why this matters beyond racing
-
-The same ideas show up in **autopilot**, **mobile robots**, and **self-driving**:
-preview, curvature-aware speed, rate limits, and trade-offs between comfort, safety, and time.
 
 <Separator className="my-10" />
 
-## Setting the Stage
+## What this course project teaches
 
-### Inputs you command
-- **Steering**: $\delta$  
-- **Longitudinal**: $a_x$ (throttle/brake)
+You’ll learn to reason about racing control in a way that is **predictable** and **teachable**:
 
-### State you observe (assumed known)
-- Position $(x,y)$, heading $\psi$, speed $v$  
-- A **reference path** (centerline or waypoints)
+- Start from a naive “aim at a point and go” baseline.
+- Add just enough physics and constraints to explain real failure modes.
+- Build an **interpretable** controller where *style is explicit*.
+- Compare against an **MPCC-like** baseline where style is mostly hidden in weights.
 
-### Task (formal)
-Map $(x,y,\psi,v,path) \rightarrow (\delta, a_x)$ to complete a lap.
-We use a lightweight kinematic model and **friction-limited** speed targets:
-clear cause → effect without heavy math.
+<Separator className="my-10" />
+
+## Your mission
+
+By the end you should be able to:
+
+1) Predict how changing **lookahead** changes stability and apexing  
+2) Explain why curvature forces a speed limit (grip budget)  
+3) Use knobs like **apex offset** and **entry/exit bias** to “shape” driving  
+4) Justify trade-offs: lap time vs jerk vs consistency  
 
 <div className="mt-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [DIAGRAM PLACEHOLDER] Simple schematic:
-  car pose, heading arrow, lookahead target on centerline, inputs (δ, a<sub>x</sub>)
-</div>
-
-<Separator className="my-12" />
-
-## Why the naive idea fails
-
-**“Point at the next checkpoint and turn toward it.”**  
-Looks sensible. In tight bends it **chatters**, misses apexes, and ignores that tighter curvature demands **lower speed**.
-
-{/* ---------------------------------------------------- */}
-{/* Lookahead / oscillation interactive */}
-{/* <LookaheadDemo trackId="s-bend" /> */}
-<div className="mb-8 rounded-2xl border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-  [INTERACTIVE PLACEHOLDER] Lookahead demo (L slider) on S-bend
-  <div className="mt-2 opacity-70">
-    Small L → oscillation; Large L → apex overshoot. Heading-error plot below.
-  </div>
-</div>
-
-{/* ---------------------------------------------------- */}
-{/* Curvature-to-speed strip */}
-{/* <CurvatureSpeedStrip trackId="hairpin" mu={1.0} /> */}
-<div className="mb-10 rounded-2xl border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-  [INTERACTIVE PLACEHOLDER] Curvature→Speed strip (hover sync)
-  <div className="mt-2 opacity-70">Toggle μ to see v_max(s) collapse when grip drops.</div>
+  [FIGURE PLACEHOLDER] “Knob → behaviour” montage (4 mini panels)
+  <ul className="list-disc pl-5 mt-2 space-y-1">
+    <li>Apex offset shifts where the car cuts the corner</li>
+    <li>Entry/exit bias shifts when you rotate vs accelerate</li>
+    <li>Risk changes how close you run to friction saturation</li>
+    <li>Smoothness shapes command rates / jerk</li>
+  </ul>
 </div>
 
 <Separator className="my-10" />
 
-## The five ideas we’ll use
+## Challenge mode: beat the ghosts
 
-1. **Preview (Lookahead)** — pick a target ahead along the path.  
-2. **Curvature → Target Speed** — set v_t(s) ≈ √(μ g / |κ(s)|) and smooth it.
-3. **Gain Scheduling** — reduce steering gain at higher speeds.  
-4. **Smoothness** — limit jerk/command-rate (low-pass on $\delta$, $a_x$ or rate penalties).  
-5. **Explicit Style** — expose **apex**, **entry/exit bias**, **risk**, **smoothness** as interpretable knobs.
+You’ll tune a style-parameterized controller and race:
 
-<div className="grid gap-4 md:grid-cols-2 mt-6">
-  {/* <StyleKnobCards /> */}
-  <div className="rounded-2xl border bg-muted/20 p-4 text-sm text-muted-foreground">
-    [CARD] Apex Offset — path bulges earlier/later; mini-corner animation.
-  </div>
-  <div className="rounded-2xl border bg-muted/20 p-4 text-sm text-muted-foreground">
-    [CARD] Entry/Exit Bias — braking/rotation staging shifts along the arc.
-  </div>
-  <div className="rounded-2xl border bg-muted/20 p-4 text-sm text-muted-foreground">
-    [CARD] Risk — speed band expands/shrinks near peak curvature.
-  </div>
-  <div className="rounded-2xl border bg-muted/20 p-4 text-sm text-muted-foreground">
-    [CARD] Smoothness — command traces low-pass vs raw (jerk plot).
-  </div>
-</div>
+- A conservative preview baseline
+- An MPCC-like “ghost” (strong baseline)
 
-<Separator className="my-12" />
-
-## Ghost Race (Teaser)
-
-{/* <GhostTeaser presetStyle="baseline" opponent="mpcc" /> */}
 <div className="mb-10 rounded-2xl border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-  [SIM PLACEHOLDER] Split view: You (style-param preset) vs MPCC-like ghost on hairpin+chicane.
-  <div className="mt-2 opacity-70">
-    Lap delta ribbon in top-right. CTA: “Tune my style →”
-  </div>
+  [SIM PLACEHOLDER] Split-screen ghost race + lap delta ribbon
 </div>
 
 <Separator className="my-10" />
 
-## Beyond Racing (Same Ideas, New Domains)
+## Start here
 
-- **Autopilot** — preview turns, limit rates for passenger comfort.  
-- **Mobile robots** — curvature-aware speed on narrow aisles.  
-- **Self-driving** — trade comfort/safety/time with explicit rate limits.
+- If you want the big picture: read **The Problem** next.
+- If you want definitions and scope: go to **Scope & Glossary**.
 
-{/* <BeyondRacingStrip /> */}
-<div className="mt-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [IMAGE STRIP PLACEHOLDER] Three panels: Drone spline preview • Cart slowing for bend • Airliner turn with rate limits
-</div>
 
-<Separator className="my-12" />
-
-## Your Mission
-
-Dial the style knobs and beat:
-1) a **conservative** preview baseline, and  
-2) an **MPCC-like** ghost.  
-
-If you can **predict** the trajectory before you hit “run,” you’re learning the right thing.
-
-<div className="mt-8">
-  {/* <CTA href="/learn/playground">Tune my style →</CTA> */}
-  <a
-    href="/learn/playground"
-    className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-muted/40"
-  >
-    Tune my style →
-  </a>
-</div>
-
-<br />
-<br />

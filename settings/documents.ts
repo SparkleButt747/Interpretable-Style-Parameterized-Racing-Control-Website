@@ -2,113 +2,68 @@ import { Paths } from "@/lib/pageroutes"
 
 export const Documents: Paths[] = [
   {
-    heading: "Introduction",
-    title: "What You'll Learn",
-    href: "/introduction"
-  },
-  {
-    title: "Setting The Stage",
-    href: "/introduction/setting-the-stage",
+    title: "Introduction",
+    href: "/introduction",
     items: [
       {
-        title: "The Problem Explained",
-        href: "/the-problem-explained",
+        title: "Problem",
+        href: "/problem",
       },
       {
-        title: "Assumptions And Scope",
-        href: "/assumptions-and-scope",
+        title: "Scope & Glossary",
+        href: "/scope",
+      },
+    ],
+  },
+  {
+    title: "Core Mechanics",
+    href: "/core",
+    noLink: true,
+    items: [
+      {
+        title: "Plant And Limits",
+        href: "/plant-and-limits",
       }
     ],
   },
   {
-    title: "Physics Backbone",
-    href: "/physics-backbone",
+    title: "Controllers",
+    href: "/controllers",
+    noLink: true,
     items: [
       {
-        title: "Inputs, Outputs & State",
-        href: "/inputs-outputs-and-state",
+        title: "Preview And Speed",
+        href: "/preview-and-speed",
       },
       {
-        title: "What This Buys Us",
-        href: "/what-this-buys-us",
-      }
+        title: "Style-Parameterized",
+        href: "/style-parameterized",
+      },
+      {
+        title: "MPCC Foil",
+        href: "/mpcc-foil",
+      },
     ],
   },
   {
-    title: "MPCC",
-    href: "/mpcc",
+    title: "Playground",
+    href: "/playground",
     items: [
       {
-        title: "The Idea",
-        href: "/the-idea",
+        title: "Experiments",
+        href: "/experiments",
       },
-      {
-        title: "Weights/Constraints And What They Mean",
-        href: "/weights-and-constraints",
-      }
     ],
   },
   {
-    title: "How We Measure & Interact",
-    href: "/measurement-and-interaction",
-    items: [
-      {
-        title: "Datasets + Tracks",
-        href: "/datasets-and-tracks",
-      },
-      {
-        title: "The Playground",
-        href: "/the-playground",
-      }
-    ],
-  },
-  {
-    spacer: true,
-  },
-  {
-    title: "Idea To Implementation",
-    href: "/style-parameterized-controller",
-    heading: "Style-Parameterized Controller",
-  },
-  {
-    spacer: true,
-  },
-  {
-    title: "Interactive Playground",
-    href: "/interactive-playground",
-    heading: "Demos & Comparisons",
-    items: [
-      {
-        title: "Style-Param Controller Playground",
-        href: "/style-param-controller-playground",
-      },
-      {
-        title: "MPCC-like Controller Playground",
-        href: "/mpcc-controller-playground",
-      },
-      {
-        title: "Head-To-Head Replay",
-        href: "/head-to-head-replay",
-      },
-      {
-        title: "Metrics",
-        href: "/metrics",
-      }
-    ],
-  },
-  {
-    title: "Test Your Knowledge",
+    title: "Assess",
     href: "/quizzes",
-    heading: "Quizzes & Exercises",
+    noLink: true,
     items: [
       {
-        title: "Basics Quiz 1",
-        href: "/basics-quiz-1",
+        title: "Quizzes",
+        href: "/",
       },
-      {
-        title: "Predict Quiz 2",
-        href: "/predict-quiz-2",
-      }
     ],
   },
 ]

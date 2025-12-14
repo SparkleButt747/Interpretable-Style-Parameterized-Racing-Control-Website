@@ -8,3 +8,9 @@ export class STDSimulationBackend extends JsSimulationBackend {
     super({ ...options, model: ModelType.STD });
   }
 }
+
+export class STSimulationBackend extends JsSimulationBackend {
+  constructor(options: VehicleBackendOptions) {
+    super({ ...options, model: ModelType.ST });
+  }
+}

@@ -137,3 +137,38 @@ export interface VehicleParameters {
 }
 
 export type NumericRecord = Record<string, number>;
+
+// Minimal single-track bicycle model parameters.
+export interface SingleTrackSteeringLimits {
+  min: number;
+  max: number;
+  rate_min: number;
+  rate_max: number;
+}
+
+export interface SingleTrackAccelerationLimits {
+  min: number;
+  max: number;
+}
+
+export interface SingleTrackParameters {
+  l_f: number;
+  l_r: number;
+  m: number;
+  I_z: number;
+  lat_accel_max: number;
+  steering: SingleTrackSteeringLimits;
+  accel: SingleTrackAccelerationLimits;
+}
+
+export type ModelParameters = VehicleParameters | SingleTrackParameters;
+
+export function isSingleTrackParameters(params: ModelParameters): params is SingleTrackParameters {
+  return (params as SingleTrackParameters).l_f !== undefined &&
+    (params as SingleTrackParameters).l_r !== undefined &&
+    (params as SingleTrackParameters).steering !== undefined;
+}
+
+export function isStdParameters(params: ModelParameters): params is VehicleParameters {
+  return !isSingleTrackParameters(params);
+}

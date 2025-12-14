@@ -1,10 +1,11 @@
 import { LowSpeedSafety } from './LowSpeedSafety';
-import { VehicleParameters } from '../models/types';
+import { ModelParameters, isSingleTrackParameters } from '../models/types';
+import { stSteeringAngleConstraint } from '../models/constraints';
 
 export interface ModelInterface {
-  init: (state: number[], params: VehicleParameters) => number[];
-  dynamics: (state: number[], control: number[], params: VehicleParameters, dt: number) => number[];
-  speed: (state: number[], params: VehicleParameters) => number;
+  init: (state: number[], params: ModelParameters) => number[];
+  dynamics: (state: number[], control: number[], params: ModelParameters, dt: number) => number[];
+  speed: (state: number[], params: ModelParameters) => number;
 }
 
 export class VehicleSimulator {
@@ -13,7 +14,7 @@ export class VehicleSimulator {
 
   constructor(
     private model: ModelInterface,
-    private params: VehicleParameters,
+    private params: ModelParameters,
     private dt: number,
     private safety: LowSpeedSafety
   ) {
@@ -127,5 +128,16 @@ export class VehicleSimulator {
   private applySafety(state: number[], updateLatch: boolean): void {
     const speed = this.model.speed(state, this.params);
     this.safety.apply(state, speed, updateLatch);
+    if (isSingleTrackParameters(this.params)) {
+      const steeringIdx = this.safety.steeringIndex();
+      if (steeringIdx !== undefined && steeringIdx >= 0 && steeringIdx < state.length) {
+          state[steeringIdx] = stSteeringAngleConstraint(state[steeringIdx], this.params);
+          const L = Math.max(this.params.l_f + this.params.l_r, 1e-6);
+          if (this.params.lat_accel_max > 0 && Math.abs(speed) > 1e-6) {
+            const maxDeltaForLat = Math.atan((this.params.lat_accel_max * L) / (speed * speed));
+            state[steeringIdx] = Math.min(Math.max(state[steeringIdx], -maxDeltaForLat), maxDeltaForLat);
+          }
+      }
+    }
   }
 }

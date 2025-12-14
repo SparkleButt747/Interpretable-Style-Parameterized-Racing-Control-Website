@@ -1,6 +1,12 @@
-import { accelerationConstraints, steeringConstraints } from './constraints';
+import {
+  accelerationConstraints,
+  steeringConstraints,
+  stAccelerationConstraint,
+  stSteeringAngleConstraint,
+  stSteeringRateConstraint,
+} from './constraints';
 import { formulaLateral, formulaLateralCombined, formulaLongitudinal, formulaLongitudinalCombined } from './tireModel';
-import { VehicleParameters } from './types';
+import { SingleTrackParameters, VehicleParameters } from './types';
 import { vehicleDynamicsKsCog } from './vehicleKinematics';
 
 const kGravity = 9.81;
@@ -146,4 +152,32 @@ export function vehicleDynamicsSTD(x: number[], uInit: number[], p: VehicleParam
   f[7] = w_std * d_omega_f + w_ks * d_omega_f_ks;
   f[8] = w_std * d_omega_r + w_ks * d_omega_r_ks;
   return f;
+}
+
+export function vehicleDynamicsST(x: number[], uInit: number[], p: SingleTrackParameters, _dt = 0.01): number[] {
+  if (x.length !== 5 || uInit.length !== 2) {
+    throw new Error('vehicle_dynamics_st: expected x.size()==5 and u_init.size()==2');
+  }
+
+  const L = Math.max(p.l_f + p.l_r, 1e-6);
+  const steerRate = stSteeringRateConstraint(uInit[0], p);
+  const accel = stAccelerationConstraint(uInit[1], p);
+  const deltaRaw = stSteeringAngleConstraint(x[4], p);
+  const vAbs = Math.abs(x[3]);
+  let delta = deltaRaw;
+  if (p.lat_accel_max > 0 && vAbs > 1e-6) {
+    const maxDeltaForLat = Math.atan((p.lat_accel_max * L) / (vAbs * vAbs));
+    delta = Math.min(Math.max(deltaRaw, -maxDeltaForLat), maxDeltaForLat);
+  }
+  const v = x[3];
+  const psi = x[2];
+  const beta = Math.atan((p.l_r / L) * Math.tan(delta));
+
+  const xdot = v * Math.cos(psi + beta);
+  const ydot = v * Math.sin(psi + beta);
+  const psidot = (v / Math.max(p.l_r, 1e-6)) * Math.sin(beta);
+  const vdot = accel;
+  const deltaDot = steerRate;
+
+  return [xdot, ydot, psidot, vdot, deltaDot];
 }

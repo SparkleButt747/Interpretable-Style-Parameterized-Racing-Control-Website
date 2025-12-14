@@ -1,0 +1,77 @@
+---
+title: Playground
+description: Placeholder for the simulator, overlays, metrics, and export tools.
+keywords: ["playground", "simulator", "metrics"]
+---
+
+## What you can do here
+
+This is where learning becomes measurable:
+
+- Pick a track (S-bend / Hairpin / Chicane)
+- Choose controller (Style-Param / MPCC-like ghost / baseline)
+- Tune sliders and toggles
+- Run, replay, compare, export
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [UI PLACEHOLDER] Main simulator layout: controls + track + overlays + plots + metrics
+</div>
+
+<Separator className="my-10" />
+
+## Controls
+
+- Grip $\mu$ (dry → wet)
+- Lookahead $L$
+- Style sliders: apex offset, entry/exit bias, risk, smoothness
+- Opponent: baseline vs MPCC-like ghost
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [CONTROL PANEL PLACEHOLDER] Sliders and toggles with short tooltips
+</div>
+
+<Separator className="my-10" />
+
+## Overlays
+
+- Curvature heatmap
+- Target speed band vs actual speed
+- Friction donut gauge
+- Error traces and command plots
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [OVERLAY PLACEHOLDER] Toggle grid: curvature • speed band • friction • errors • commands
+</div>
+
+<Separator className="my-10" />
+
+## Metrics (the “why” behind each)
+
+- Lap time $T_{\text{lap}}$
+- Lateral g (max/avg): $a_y = \frac{v^2|\kappa|}{g}$
+- Mean jerk (proxy): average $|\Delta a_x|/\Delta t$
+- RMS contouring error: $\text{RMSE}(e_\perp)$
+- Overshoot count, apex hit/miss, off-track time
+- Peak friction usage:
+
+$$
+\max \frac{\sqrt{a_x^2 + (v^2\kappa)^2}}{\mu g}
+$$
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [METRICS PANEL PLACEHOLDER] Badges + sparklines + pass/fail flags
+</div>
+
+<Separator className="my-10" />
+
+## Reproducibility
+
+- Seed-fixed runs
+- Shareable preset hash (track, $\mu$, $L$, style knobs, controller)
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [EXPORT BAR PLACEHOLDER] Download CSV • Copy share link
+</div>
+
+
+

@@ -16,7 +16,8 @@ import type { ModelTimingInfo } from './types';
 import { BackendSnapshot, HybridSimulationBackend, NativeDaemonFactory, SimulationBackend } from './backend';
 import { SteeringWheel, FinalSteerController } from '../controllers/steering';
 import { FinalAccelController, ControllerOutput as AccelControllerOutput } from '../controllers/longitudinal/finalAccelController';
-import { VehicleParameters } from '../models/types';
+import { ModelParameters, isSingleTrackParameters } from '../models/types';
+import { stAccelerationConstraint, stSteeringRateConstraint } from '../models/constraints';
 export { ControlMode, ModelType } from './types';
 export type { ModelTimingInfo } from './types';
 
@@ -30,6 +31,8 @@ export interface UserInput {
   longitudinal: DriverIntent;
   steering_nudge?: number;
   steering_angle?: number;
+  steering_rate?: number;
+  acceleration?: number;
   axle_torques?: number[];
   drift_toggle?: number;
   timestamp: number;
@@ -43,6 +46,10 @@ export interface UserInputLimitsConfig {
   max_brake?: number;
   min_steering_nudge?: number;
   max_steering_nudge?: number;
+  min_steering_rate?: number;
+  max_steering_rate?: number;
+  min_accel?: number;
+  max_accel?: number;
   min_drift_toggle?: number;
   max_drift_toggle?: number;
   min_steering_angle?: number;
@@ -58,6 +65,10 @@ export class UserInputLimits {
   max_brake = 1.0;
   min_steering_nudge = -1.0;
   max_steering_nudge = 1.0;
+  min_steering_rate = -4.0;
+  max_steering_rate = 4.0;
+  min_accel = -8.0;
+  max_accel = 8.0;
   min_drift_toggle = 0.0;
   max_drift_toggle = 1.0;
   min_steering_angle = 0.0;
@@ -77,6 +88,9 @@ export class UserInputLimits {
       copy.longitudinal.throttle = clamp(copy.longitudinal.throttle, this.min_throttle, this.max_throttle);
       copy.longitudinal.brake = clamp(copy.longitudinal.brake, this.min_brake, this.max_brake);
       copy.steering_nudge = clamp(copy.steering_nudge ?? 0.0, this.min_steering_nudge, this.max_steering_nudge);
+    } else if (mode === ControlMode.MPCC) {
+      copy.steering_rate = clamp(copy.steering_rate ?? 0.0, this.min_steering_rate, this.max_steering_rate);
+      copy.acceleration = clamp(copy.acceleration ?? 0.0, this.min_accel, this.max_accel);
     } else {
       copy.steering_angle = clamp(copy.steering_angle ?? 0.0, this.min_steering_angle, this.max_steering_angle);
       if (Array.isArray(copy.axle_torques) &&
@@ -112,6 +126,13 @@ export class UserInputLimits {
       const steeringNudge = input.steering_nudge ?? 0.0;
       requireFinite(steeringNudge, 'steering_nudge');
       requireInRange(steeringNudge, 'steering_nudge', this.min_steering_nudge, this.max_steering_nudge);
+    } else if (mode === ControlMode.MPCC) {
+      const steeringRate = input.steering_rate ?? 0.0;
+      requireFinite(steeringRate, 'steering_rate');
+      requireInRange(steeringRate, 'steering_rate', this.min_steering_rate, this.max_steering_rate);
+      const accel = input.acceleration ?? 0.0;
+      requireFinite(accel, 'acceleration');
+      requireInRange(accel, 'acceleration', this.min_accel, this.max_accel);
     } else if (mode === ControlMode.Direct) {
       const steeringAngle = input.steering_angle ?? 0.0;
       requireFinite(steeringAngle, 'steering_angle');
@@ -201,6 +222,7 @@ export interface StepSchedule {
 
 const kMinStableDt = 0.001;
 const kDefaultTimings: Record<ModelType, ModelTimingInfo> = {
+  [ModelType.ST]: { nominal_dt: 0.02, max_dt: 0.02 },
   [ModelType.STD]: { nominal_dt: 0.01, max_dt: 0.01 },
 };
 
@@ -279,7 +301,7 @@ export class SimulationDaemon {
   private limits: UserInputLimits;
   private timing: ModelTiming;
   private configManager: ConfigManager;
-  private params?: VehicleParameters;
+  private params?: ModelParameters;
   private steeringWheel?: SteeringWheel;
   private finalSteer?: FinalSteerController;
   private accelController?: FinalAccelController;
@@ -291,9 +313,9 @@ export class SimulationDaemon {
   ready: Promise<void>;
 
   constructor(private readonly init: InitParams = {}) {
-    this.model = init.model ?? ModelType.STD;
+    this.model = init.model ?? ModelType.ST;
     this.vehicleId = init.vehicle_id ?? 2;
-    this.driftEnabled = init.drift_enabled ?? true;
+    this.driftEnabled = init.drift_enabled ?? false;
     this.controlMode = init.control_mode ?? ControlMode.Keyboard;
     this.configManager =
       init.config_manager ?? new ConfigManager(init.config_root, init.parameter_root, init.config_fetcher);
@@ -346,7 +368,8 @@ export class SimulationDaemon {
     await this.ready;
     const working: UserInput = { ...input, control_mode: this.controlMode };
     const sanitized = this.limits.clamp(working);
-    if (sanitized.drift_toggle !== undefined) {
+    const isStModel = this.model === ModelType.ST || (this.params !== undefined && isSingleTrackParameters(this.params));
+    if (sanitized.drift_toggle !== undefined && !isStModel) {
       this.setDriftEnabled(sanitized.drift_toggle >= 0.5);
     }
 
@@ -367,26 +390,43 @@ export class SimulationDaemon {
         steeringOutput = this.steeringWheel.update(sanitized.steering_nudge ?? 0, dt);
         finalOutput = this.finalSteer.update(steeringOutput.target_angle, currentAngle, dt);
         accelOutput = this.accelController.step(sanitized.longitudinal as DriverIntent, startSpeed, dt);
-        await this.backend.step([finalOutput.rate, accelOutput.acceleration], dt);
+        await this.backend.step(this.clampControl([finalOutput.rate, accelOutput.acceleration]), dt);
         const endSpeed = this.backend.speed();
         const meanSpeed = 0.5 * (Math.abs(startSpeed) + Math.abs(endSpeed));
         const batteryPower = accelOutput.battery_power ?? accelOutput.acceleration * meanSpeed * (this.params?.m ?? 0);
         this.cumulativeDistance += meanSpeed * dt;
         this.cumulativeEnergy += batteryPower * dt;
+      } else if (sanitized.control_mode === ControlMode.MPCC) {
+        accelCommand = sanitized.acceleration ?? sanitized.longitudinal.throttle - sanitized.longitudinal.brake;
+        steerRate = sanitized.steering_rate ?? 0;
+        const control = [steerRate, accelCommand];
+        await this.backend.step(this.clampControl(control), dt);
+        const speed = this.backend.speed();
+        this.cumulativeDistance += Math.abs(speed) * dt;
+        this.cumulativeEnergy += accelCommand * speed * dt;
       } else if (sanitized.control_mode === ControlMode.Direct) {
         accelCommand = this.directAccelerationFromTorque(sanitized.axle_torques ?? []);
         steerRate = 0;
         const control = [steerRate, accelCommand];
-        await this.backend.step(control, dt);
+        await this.backend.step(this.clampControl(control), dt);
         const speed = this.backend.speed();
         this.cumulativeDistance += Math.abs(speed) * dt;
         this.cumulativeEnergy += accelCommand * speed * dt;
       } else {
-        accelCommand = sanitized.longitudinal.throttle - sanitized.longitudinal.brake;
         const nudge = sanitized.steering_nudge ?? 0;
         steerRate = nudge;
+        if (isStModel && this.params && isSingleTrackParameters(this.params)) {
+          const accelMax = Math.max(this.params.accel.max ?? this.limits.max_accel, 0);
+          const accelMin = Math.min(this.params.accel.min ?? this.limits.min_accel, 0);
+          const throttleScale = Math.abs(accelMax);
+          const brakeScale = Math.abs(accelMin);
+          accelCommand = (sanitized.longitudinal.throttle ?? 0) * throttleScale -
+            (sanitized.longitudinal.brake ?? 0) * brakeScale;
+        } else {
+          accelCommand = sanitized.longitudinal.throttle - sanitized.longitudinal.brake;
+        }
         const control = [steerRate, accelCommand];
-        await this.backend.step(control, dt);
+        await this.backend.step(this.clampControl(control), dt);
         const speed = this.backend.speed();
         this.cumulativeDistance += Math.abs(speed) * dt;
         this.cumulativeEnergy += accelCommand * speed * dt;
@@ -407,6 +447,20 @@ export class SimulationDaemon {
       outputs.push(await this.step(entry));
     }
     return outputs;
+  }
+
+  private buildLimits(params?: ModelParameters): UserInputLimits {
+    if (params && isSingleTrackParameters(params) && this.model === ModelType.ST) {
+      return new UserInputLimits({
+        min_steering_nudge: params.steering.rate_min,
+        max_steering_nudge: params.steering.rate_max,
+        min_steering_rate: params.steering.rate_min,
+        max_steering_rate: params.steering.rate_max,
+        min_accel: params.accel.min,
+        max_accel: params.accel.max,
+      });
+    }
+    return new UserInputLimits();
   }
 
   private buildTelemetry(
@@ -434,6 +488,7 @@ export class SimulationDaemon {
     }
 
     if (accelOutput) {
+      const wheelRadius = this.params && !isSingleTrackParameters(this.params) ? this.params.R_w : 0;
       telemetry.controller.acceleration = accelOutput.acceleration;
       telemetry.controller.throttle = accelOutput.throttle;
       telemetry.controller.brake = accelOutput.brake;
@@ -444,8 +499,8 @@ export class SimulationDaemon {
       telemetry.controller.drag_force = accelOutput.drag_force;
       telemetry.controller.rolling_force = accelOutput.rolling_force;
 
-      telemetry.powertrain.drive_torque = accelOutput.drive_force * (this.params?.R_w ?? 0);
-      telemetry.powertrain.regen_torque = accelOutput.regen_force * (this.params?.R_w ?? 0);
+      telemetry.powertrain.drive_torque = accelOutput.drive_force * wheelRadius;
+      telemetry.powertrain.regen_torque = accelOutput.regen_force * wheelRadius;
       telemetry.powertrain.total_torque = telemetry.powertrain.drive_torque - telemetry.powertrain.regen_torque;
       telemetry.powertrain.mechanical_power = accelOutput.mechanical_power;
       telemetry.powertrain.battery_power = accelOutput.battery_power;
@@ -473,9 +528,15 @@ export class SimulationDaemon {
 
   private async rebuildControllers(): Promise<void> {
     if (!this.params) {
-      this.params = await this.configManager.loadVehicleParameters(this.vehicleId).catch(() => this.params);
+      this.params = await this.configManager.loadModelParameters(this.vehicleId, this.model).catch(() => this.params);
     }
     if (!this.params) {
+      return;
+    }
+    if (isSingleTrackParameters(this.params)) {
+      this.steeringWheel = undefined;
+      this.finalSteer = undefined;
+      this.accelController = undefined;
       return;
     }
     const steeringCfg = await this.configManager.loadSteeringConfig().catch(() => ({} as any));
@@ -516,8 +577,17 @@ export class SimulationDaemon {
     );
   }
 
+  private clampControl(control: number[]): number[] {
+    if (!this.params || !isSingleTrackParameters(this.params) || this.model !== ModelType.ST) {
+      return control;
+    }
+    const rate = stSteeringRateConstraint(control[0] ?? 0, this.params);
+    const accel = stAccelerationConstraint(control[1] ?? 0, this.params);
+    return [rate, accel];
+  }
+
   private directAccelerationFromTorque(axleTorques: number[]): number {
-    if (!this.params) {
+    if (!this.params || isSingleTrackParameters(this.params)) {
       return (axleTorques ?? []).reduce((sum, torque) => sum + torque, 0);
     }
     const frontSplit = Math.min(Math.max(this.params.T_se, 0), 1);
@@ -555,7 +625,10 @@ export class SimulationDaemon {
     if (params.drift_enabled !== undefined) {
       this.driftEnabled = params.drift_enabled;
     }
-    this.params = await this.configManager.loadVehicleParameters(this.vehicleId).catch(() => this.params);
+    this.params = await this.configManager.loadModelParameters(this.vehicleId, this.model).catch(() => this.params);
+    if (!this.init.limits) {
+      this.limits = this.buildLimits(this.params);
+    }
     if (!this.init.backend && ((params.model && params.model !== originalModel) || (params.vehicle_id && params.vehicle_id !== originalVehicle))) {
       this.backend = new HybridSimulationBackend({
         model: this.model,

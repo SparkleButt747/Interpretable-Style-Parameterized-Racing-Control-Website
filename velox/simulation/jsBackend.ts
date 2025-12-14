@@ -1,7 +1,7 @@
 import { SimulationTelemetryState, SafetyStage } from '../telemetry/index';
 import type { BackendSnapshot, SimulationBackend } from './backend';
 import { ModelType } from './types';
-import { VehicleParameters } from '../models/types';
+import { ModelParameters, SingleTrackParameters, isSingleTrackParameters } from '../models/types';
 import { VehicleSimulator } from './VehicleSimulator';
 import { buildModelInterface } from './modelInterface';
 import { LowSpeedSafety, LowSpeedSafetyConfig, LowSpeedIndices } from './LowSpeedSafety';
@@ -9,7 +9,7 @@ import { LossOfControlConfig, LossOfControlDetector } from './LossOfControlDetec
 
 export interface JsBackendOptions {
   model: ModelType;
-  params: VehicleParameters;
+  params: ModelParameters;
   lowSpeed: LowSpeedSafetyConfig;
   lossConfig: LossOfControlConfig;
   driftEnabled: boolean;
@@ -25,7 +25,8 @@ interface TelemetryInputs {
 }
 
 export class JsSimulationBackend implements SimulationBackend {
-  private params: VehicleParameters;
+  private params: ModelParameters;
+  private model: ModelType;
   private safety: LowSpeedSafety;
   private loss: LossOfControlDetector;
   private simulator: VehicleSimulator;
@@ -39,6 +40,7 @@ export class JsSimulationBackend implements SimulationBackend {
 
   constructor(private readonly options: JsBackendOptions) {
     this.params = options.params;
+    this.model = options.model;
     this.indices = buildSafetyIndices(options.model, options.params);
     this.safety = new LowSpeedSafety(options.lowSpeed, this.indices);
     this.loss = new LossOfControlDetector(options.lossConfig);
@@ -77,18 +79,19 @@ export class JsSimulationBackend implements SimulationBackend {
 
     const state = this.simulator.currentState();
     const speed = this.simulator.speed();
+    const isStModel = this.model === ModelType.ST || isSingleTrackParameters(this.params);
 
-    const lateralAccel = this.estimateLateralAccel(state);
-    const slipRatios = this.computeSlipRatios(state, speed);
-    const yawRate = this.indexValue(state, this.indices.yawRateIndex);
-    const slip = this.indexValue(state, this.indices.slipIndex);
-    const severity = this.loss.update(this.dt, yawRate, slip, lateralAccel, slipRatios);
+    const lateralAccel = isStModel ? 0 : this.estimateLateralAccel(state);
+    const slipRatios = isStModel ? [0, 0] : this.computeSlipRatios(state, speed);
+    const yawRate = isStModel ? 0 : this.indexValue(state, this.indices.yawRateIndex);
+    const slip = isStModel ? 0 : this.indexValue(state, this.indices.slipIndex);
+    const severity = isStModel ? 0 : this.loss.update(this.dt, yawRate, slip, lateralAccel, slipRatios);
 
     this.simTime += this.dt;
     this.distance += Math.abs(speed) * this.dt;
     this.energy += accel * speed * this.dt;
 
-    const slips = this.estimateAxleSlips(state);
+    const slips = isStModel ? { front: 0, rear: 0 } : this.estimateAxleSlips(state);
 
     this.updateTelemetry(state, {
       accel,
@@ -109,6 +112,9 @@ export class JsSimulationBackend implements SimulationBackend {
   }
 
   private estimateAxleSlips(state: number[]): { front: number; rear: number } {
+    if (isSingleTrackParameters(this.params)) {
+      return { front: 0, rear: 0 };
+    }
     const speed = this.indexValue(state, this.indices.longitudinalIndex);
     const beta = this.indexValue(state, this.indices.slipIndex);
     const yawRate = this.indexValue(state, this.indices.yawRateIndex);
@@ -135,9 +141,12 @@ export class JsSimulationBackend implements SimulationBackend {
   }
 
   private computeSlipRatios(state: number[], speed: number): number[] {
+    if (!this.indices.wheelSpeedIndices || this.indices.wheelSpeedIndices.length < 2) {
+      return [0, 0];
+    }
     const denom = Math.max(speed, 1e-6);
-    const front = this.indexValue(state, 7);
-    const rear = this.indexValue(state, 8);
+    const front = this.indexValue(state, this.indices.wheelSpeedIndices[0]);
+    const rear = this.indexValue(state, this.indices.wheelSpeedIndices[1]);
     return [(front - speed) / denom, (rear - speed) / denom];
   }
 
@@ -149,6 +158,94 @@ export class JsSimulationBackend implements SimulationBackend {
   }
 
   private updateTelemetry(state: number[], inputs: TelemetryInputs, detectorSeverity = 0): void {
+    if (isSingleTrackParameters(this.params)) {
+      const yaw = state[2] ?? 0;
+      const speed = this.indexValue(state, this.indices.longitudinalIndex);
+      const yawRate = this.yawRateForSt(state, this.params);
+      const totalNormal = Math.max(this.params.m * 9.81, 1e-6);
+      const wheelbase = Math.max(this.params.l_f + this.params.l_r, 1e-6);
+      const frontNormal = totalNormal * (this.params.l_r / wheelbase);
+      const rearNormal = totalNormal - frontNormal;
+      const telem = new SimulationTelemetryState();
+      telem.pose.x = state[0] ?? 0;
+      telem.pose.y = state[1] ?? 0;
+      telem.pose.yaw = yaw;
+
+      telem.velocity.speed = Math.abs(speed);
+      telem.velocity.longitudinal = speed;
+      telem.velocity.lateral = inputs.lateralAccel;
+      telem.velocity.yaw_rate = yawRate;
+      telem.velocity.global_x = speed * Math.cos(yaw);
+      telem.velocity.global_y = speed * Math.sin(yaw);
+
+      telem.acceleration.longitudinal = inputs.accel;
+      telem.acceleration.lateral = inputs.lateralAccel;
+
+      telem.traction.slip_angle = 0;
+      telem.traction.front_slip_angle = 0;
+      telem.traction.rear_slip_angle = 0;
+      telem.traction.lateral_force_saturation = 0;
+      telem.traction.drift_mode = false;
+
+      telem.steering.desired_angle = state[this.indices.steeringIndex ?? 4] ?? 0;
+      telem.steering.actual_angle = telem.steering.desired_angle;
+      telem.steering.desired_rate = inputs.steerRate;
+      telem.steering.actual_rate = inputs.steerRate;
+
+      const accelScale = Math.max(Math.abs(this.params.accel.max || 1), 1e-6);
+      telem.controller.acceleration = inputs.accel;
+      telem.controller.throttle = Math.max(0, inputs.accel) / accelScale;
+      telem.controller.brake = Math.max(0, -inputs.accel) / Math.max(Math.abs(this.params.accel.min || 1), 1e-6);
+      telem.controller.drive_force = Math.max(0, inputs.accel) * this.params.m;
+      telem.controller.brake_force = Math.max(0, -inputs.accel) * this.params.m;
+      telem.controller.regen_force = 0;
+      telem.controller.hydraulic_force = telem.controller.brake_force;
+      telem.controller.drag_force = 0;
+      telem.controller.rolling_force = 0;
+
+      telem.powertrain.drive_torque = 0;
+      telem.powertrain.regen_torque = 0;
+      telem.powertrain.total_torque = 0;
+      telem.powertrain.mechanical_power = (telem.controller.drive_force - telem.controller.brake_force) * speed;
+      telem.powertrain.battery_power = telem.powertrain.mechanical_power;
+      telem.powertrain.soc = this.telemetry.powertrain.soc || 0.5;
+
+      telem.front_axle.drive_torque = telem.controller.drive_force * wheelbase * 0.5;
+      telem.rear_axle.drive_torque = telem.controller.drive_force * wheelbase * 0.5;
+      telem.front_axle.brake_torque = telem.controller.brake_force * wheelbase * 0.5;
+      telem.rear_axle.brake_torque = telem.controller.brake_force * wheelbase * 0.5;
+      telem.front_axle.regen_torque = 0;
+      telem.rear_axle.regen_torque = 0;
+      telem.front_axle.normal_force = frontNormal;
+      telem.rear_axle.normal_force = rearNormal;
+
+      telem.front_axle.left.speed = speed;
+      telem.front_axle.right.speed = speed;
+      telem.rear_axle.left.speed = speed;
+      telem.rear_axle.right.speed = speed;
+      telem.front_axle.left.slip_ratio = 0;
+      telem.front_axle.right.slip_ratio = 0;
+      telem.rear_axle.left.slip_ratio = 0;
+      telem.rear_axle.right.slip_ratio = 0;
+      telem.front_axle.left.friction_utilization = 0;
+      telem.front_axle.right.friction_utilization = 0;
+      telem.rear_axle.left.friction_utilization = 0;
+      telem.rear_axle.right.friction_utilization = 0;
+
+      const safetyStatus = this.safety.status(state, Math.abs(speed));
+      telem.detector_severity = Math.max(detectorSeverity, safetyStatus.severity);
+      telem.safety_stage = safetyStatus.stage;
+      telem.detector_forced = safetyStatus.detector_forced;
+      telem.low_speed_engaged = safetyStatus.latch_active;
+
+      telem.totals.distance_traveled_m = this.distance;
+      telem.totals.energy_consumed_joules = this.energy;
+      telem.totals.simulation_time_s = this.simTime;
+
+      this.telemetry = telem;
+      return;
+    }
+
     const wheelRadius = this.params.R_w;
     const frontSplit = clamp(this.params.T_sb, 0, 1);
     const rearSplit = 1 - frontSplit;
@@ -272,9 +369,17 @@ export class JsSimulationBackend implements SimulationBackend {
   private estimateWheelSpeed(state: number[], front: boolean): number {
     return front ? this.indexValue(state, 7) : this.indexValue(state, 8);
   }
+
+  private yawRateForSt(state: number[], params: SingleTrackParameters): number {
+    const v = this.indexValue(state, this.indices.longitudinalIndex);
+    const delta = state[this.indices.steeringIndex ?? 4] ?? 0;
+    const L = Math.max(params.l_f + params.l_r, 1e-6);
+    const beta = Math.atan((params.l_r / L) * Math.tan(delta));
+    return (v / Math.max(params.l_r, 1e-6)) * Math.sin(beta);
+  }
 }
 
-function buildSafetyIndices(_model: ModelType, params: VehicleParameters): LowSpeedIndices {
+function buildSafetyIndices(model: ModelType, params: ModelParameters): LowSpeedIndices {
   let longitudinalIndex: number | undefined;
   let lateralIndex: number | undefined;
   let yawRateIndex: number | undefined;
@@ -282,14 +387,32 @@ function buildSafetyIndices(_model: ModelType, params: VehicleParameters): LowSp
   let wheelSpeedIndices: number[] | undefined;
   let steeringIndex: number | undefined;
 
+  if (model === ModelType.ST || isSingleTrackParameters(params)) {
+    const stParams = isSingleTrackParameters(params) ? params : undefined;
+    longitudinalIndex = 3;
+    steeringIndex = 4;
+    const wheelbase = stParams ? stParams.l_f + stParams.l_r : 0;
+    const rearLength = stParams ? stParams.l_r : 0;
+    return {
+      longitudinalIndex,
+      lateralIndex,
+      yawRateIndex,
+      slipIndex,
+      wheelSpeedIndices,
+      steeringIndex,
+      wheelbase: wheelbase > 0 ? wheelbase : undefined,
+      rearLength: rearLength > 0 ? rearLength : undefined,
+    };
+  }
+
   longitudinalIndex = 3;
   yawRateIndex = 5;
   slipIndex = 6;
   steeringIndex = 2;
   wheelSpeedIndices = [7, 8];
 
-  const wheelbase = params.a + params.b;
-  const rearLength = params.b;
+  const wheelbase = (params as any).a + (params as any).b;
+  const rearLength = (params as any).b;
 
   return {
     longitudinalIndex,

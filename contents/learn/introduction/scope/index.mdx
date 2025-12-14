@@ -1,0 +1,69 @@
+---
+title: Scope And Glossary
+description: Placeholder for assumptions, scope boundaries, and glossary references.
+keywords: ["scope", "glossary", "assumptions"]
+---
+
+## What this project is (and is not)
+
+We’re building a **teaching simulator** for racing control ideas:
+fast, stable, and interpretable.
+
+We intentionally do **not** build a full perception stack or a high-fidelity tire model.
+
+<Separator className="my-10" />
+
+## Assumptions
+
+We assume we have:
+
+- State estimate $(x,y,\psi,v)$ at each control tick
+- A reference path $\gamma(s)$ with curvature $\kappa(s)$
+- A grip estimate $\mu$ and actuator limits
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [CARD PLACEHOLDER] “Inputs we know” checklist (state, path, limits)
+</div>
+
+<Separator className="my-10" />
+
+## In scope
+
+- Preview/lookahead targeting
+- Curvature $\kappa$ → target speed
+- Gain scheduling (speed-dependent steering authority)
+- Command smoothing / jerk limiting
+- **Style parameters** (apex offset, entry/exit bias, risk, smoothness)
+- MPCC as a **foil** (qualitative + surrogate ghost)
+
+## Out of scope
+
+- Full MPCC derivation and QP/SQP solver internals
+- Full vehicle dynamics (load transfer, aero, thermal tire effects)
+- Perception (camera/LiDAR, SLAM, fusion)
+- Real vehicle safety cases / hardware actuation details
+
+<Separator className="my-10" />
+
+## Glossary (short)
+
+- **Lookahead** $L$: distance ahead to aim toward  
+- **Curvature** $\kappa$: path “tightness” (bigger magnitude = tighter turn)  
+- **Contouring error** $e_\perp$: lateral deviation from path  
+- **Lag error** $e_\parallel$: along-track mismatch  
+- **Friction budget**: limit on combined lateral and longitudinal acceleration  
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [DIAGRAM PLACEHOLDER] Tangent/normal frame on the path showing $e_\perp$ and $e_\parallel$
+</div>
+
+<Separator className="my-10" />
+
+## Where the “realism” line is drawn
+
+We’ll use a lightweight model plus a friction limit so learners can see:
+**knob → behaviour** immediately.
+
+Next page: the canonical “plant and limits” we’ll rely on everywhere.
+
+

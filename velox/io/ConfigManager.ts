@@ -1,4 +1,12 @@
-import { VehicleParameters, LongitudinalParameters, SteeringParameters, TireParameters, TrailerParameters } from '../models/types';
+import {
+  VehicleParameters,
+  LongitudinalParameters,
+  SteeringParameters,
+  TireParameters,
+  TrailerParameters,
+  SingleTrackParameters,
+  ModelParameters,
+} from '../models/types';
 import { ModelTimingInfo, ModelType } from '../simulation/types';
 
 export type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -17,6 +25,8 @@ function siblingConfigRoot(parameterRoot: string): string {
 
 function modelKey(model: ModelType): string {
   switch (model) {
+    case ModelType.ST:
+      return 'st';
     case ModelType.STD:
       return 'std';
     default:
@@ -195,6 +205,36 @@ function normalizeVehicle(raw: any, tire: TireParameters): VehicleParameters {
   };
 }
 
+function normalizeStSteering(raw: any = {}): SingleTrackParameters['steering'] {
+  return {
+    min: ensureNumber(raw.min, -0.6),
+    max: ensureNumber(raw.max, 0.6),
+    rate_min: ensureNumber(raw.rate_min ?? raw.rate_min_rad ?? raw.rate_limit_min, -3),
+    rate_max: ensureNumber(raw.rate_max ?? raw.rate_max_rad ?? raw.rate_limit_max, 3),
+  };
+}
+
+function normalizeStAccel(raw: any = {}): SingleTrackParameters['accel'] {
+  return {
+    min: ensureNumber(raw.min ?? raw.min_accel, -6),
+    max: ensureNumber(raw.max ?? raw.max_accel, 4),
+  };
+}
+
+function normalizeSingleTrack(raw: any): SingleTrackParameters {
+  const steering = normalizeStSteering(raw?.steering ?? {});
+  const accel = normalizeStAccel(raw?.accel ?? raw?.acceleration ?? {});
+  return {
+    l_f: ensureNumber(raw?.l_f ?? raw?.a ?? raw?.lf),
+    l_r: ensureNumber(raw?.l_r ?? raw?.b ?? raw?.lr),
+    m: ensureNumber(raw?.m),
+    I_z: ensureNumber(raw?.I_z ?? raw?.Izz ?? raw?.I),
+    lat_accel_max: ensureNumber(raw?.lat_accel_max ?? 6),
+    steering,
+    accel,
+  };
+}
+
 export class ConfigManager {
   readonly configRoot: string;
   readonly parameterRoot: string;
@@ -232,6 +272,20 @@ export class ConfigManager {
     const tireObj = this.parseDocument(tireDoc);
     const tire = normalizeTire(tireObj);
     return normalizeVehicle(vehicleObj, tire);
+  }
+
+  async loadSingleTrackParameters(path = 'st/vehicle.yaml'): Promise<SingleTrackParameters> {
+    await this.verifyRoots();
+    const document = await this.fetchDocument(this.resolveParameterPath(path), 'single-track parameters');
+    const parsed = this.parseDocument(document);
+    return normalizeSingleTrack(parsed);
+  }
+
+  async loadModelParameters(vehicleId: number, model: ModelType): Promise<ModelParameters> {
+    if (model === ModelType.ST) {
+      return this.loadSingleTrackParameters().catch(() => normalizeSingleTrack({}));
+    }
+    return this.loadVehicleParameters(vehicleId);
   }
 
   async loadAeroConfig(path = 'aero.yaml'): Promise<Record<string, any>> {
@@ -288,6 +342,7 @@ export class ConfigManager {
   async loadModelTiming(model: ModelType): Promise<ModelTimingInfo> {
     await this.verifyRoots();
     const defaultTimings: Record<ModelType, ModelTimingInfo> = {
+      [ModelType.ST]: { nominal_dt: 0.02, max_dt: 0.02 },
       [ModelType.STD]: { nominal_dt: 0.01, max_dt: 0.01 },
     };
     const path = this.resolveConfigPath('model_timing.yaml');

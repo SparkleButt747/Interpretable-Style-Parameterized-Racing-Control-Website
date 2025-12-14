@@ -1,0 +1,105 @@
+---
+title: Plant And Limits
+description: Placeholder for state, inputs, kinematic bicycle model, friction circle, and curvature-to-speed mapping.
+keywords: ["plant", "kinematic bicycle", "friction circle"]
+---
+
+<div className="mt-2 text-base leading-7 text-muted-foreground max-w-2xl">
+  This page is the single source of truth for the simulator physics and constraints.
+  Other pages will link here instead of repeating equations.
+</div>
+
+<Separator className="my-8" />
+
+## State and commands
+
+**State**
+- Position and heading $(x,y,\psi)$
+- Speed $v$
+
+**Commands**
+- Steering $\delta$
+- Longitudinal acceleration $a_x$
+
+$$
+\pi:\{x,y,\psi,v,\gamma,\kappa,\mu\}\rightarrow\{\delta,a_x\}.
+$$
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [DIAGRAM PLACEHOLDER] Bicycle model geometry: $L,l_f,l_r,\delta,\psi$
+</div>
+
+<Separator className="my-10" />
+
+## Kinematic bicycle (teaching model)
+
+$$
+\dot{x}=v\cos(\psi+\beta),\quad
+\dot{y}=v\sin(\psi+\beta),\quad
+\dot{\psi}=\frac{v}{L}\sin\beta,\quad
+\beta=\arctan\!\Big(\frac{l_r}{L}\tan\delta\Big),\quad
+\dot{v}=a_x.
+$$
+
+We simulate at 60–120 Hz (Euler/RK2 is sufficient for stable demos).
+
+<Separator className="my-10" />
+
+## Friction limit (combined demand)
+
+We limit combined lateral and longitudinal acceleration:
+
+$$
+(a_x)^2 + (v^2\kappa)^2 \le (\mu g)^2.
+$$
+
+Interpretation: at higher curvature $|\kappa|$, allowable speed shrinks.
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [WIDGET PLACEHOLDER] Friction donut gauge (lateral vs longitudinal usage)
+</div>
+
+<Separator className="my-10" />
+
+## Curvature → target speed
+
+A simple target speed rule:
+
+$$
+v_t(s)\approx \sqrt{\frac{\mu g}{|\kappa(s)|+\epsilon}}.
+$$
+
+Then we smooth $v_t(s)$ (so it is teachable and doesn’t spike).
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [INTERACTIVE PLACEHOLDER] Curvature heatmap + target speed band; toggle $\mu$
+</div>
+
+<Separator className="my-10" />
+
+## Actuator bounds and rate limits
+
+We enforce:
+
+$$
+|\delta|\le \delta_{\max},\quad |\dot{\delta}|\le \dot{\delta}_{\max},\quad |a_x|\le a_{x,\max}.
+$$
+
+We also optionally limit jerk:
+
+$$
+| \dot{a}_x | \le j_{\max}.
+$$
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [PLOT PLACEHOLDER] $\delta(t)$ and $a_x(t)$ with/without rate limits
+</div>
+
+<Separator className="my-10" />
+
+## Takeaway
+
+This model is a **clarity machine**:
+fast, stable, and good at showing how preview, limits, and style interact.
+
+

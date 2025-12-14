@@ -1,7 +1,78 @@
 ---
-title: Test Your Knowledge
-description: Placeholder for interactive quizzes that reinforce controller intuition.
-keywords: ["quizzes", "exercises", "learning"]
+title: Quizzes
+description: Placeholder for short quizzes and the design-your-style task.
+keywords: ["quizzes", "assessment", "style design"]
 ---
 
-Content coming soon.
+<div className="mt-2 text-base leading-7 text-muted-foreground max-w-2xl">
+  These are designed to test the real skill:
+  can you <strong>predict</strong> behaviour from a controller setting before you run it?
+</div>
+
+<Separator className="my-10" />
+
+## Quiz 1 — Core concepts (short)
+
+Covers:
+- lookahead stability trade-offs
+- curvature → speed intuition
+- friction budget interpretation
+- gain scheduling and smoothing
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [QUIZ PLACEHOLDER] Multiple choice + short “explain your choice” prompts
+</div>
+
+<Separator className="my-10" />
+
+## Quiz 2 — Prediction quiz
+
+You’ll be given:
+- a track segment
+- a knob setting
+- and you must choose the expected outcome (wide apex? oscillation? jerk spike?)
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [QUIZ PLACEHOLDER] “Predict the trace” items: choose which trajectory/plot matches
+</div>
+
+<Separator className="my-10" />
+
+## Design task — pick a style for Track X
+
+**Task:** Choose style knobs to achieve a goal:
+- fastest lap
+- or smoothest within 0.5s of fastest
+- or robust under low $\mu$
+
+You must justify with at least:
+- one prediction
+- one run result
+- one metric plot
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [EXERCISE PLACEHOLDER] “Submit your settings” panel + auto-generated report preview
+</div>
+
+<Separator className="my-10" />
+
+## Wrap-up
+
+If you can consistently predict outcomes before running,
+you understand the ideas at the right level.
+
+<div className="mt-8 flex gap-3">
+    <a
+        href="/learn/playground"
+        className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-muted/40"
+    >
+        Back to Playground →
+    </a>
+    <a
+        href="/learn/controllers/style-parameterized"
+        className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-muted/40"
+    >
+        Review Style Knobs →
+    </a>
+</div>
+

@@ -2,6 +2,7 @@ import { promises as fs } from "fs"
 import path from "path"
 
 import type { VehicleOption, VeloxConfigBundle } from "./types"
+import { loadTracks } from "./loadTracks"
 
 const CONFIG_ROOT = "http://local.velox.config/"
 const PARAMETER_ROOT = "http://local.velox.parameters/"
@@ -102,6 +103,9 @@ async function loadVehicleOptions(dir: string, allowedIds?: Set<number>): Promis
 function ensureModelTiming(configFiles: Record<string, string>): void {
   if (configFiles["model_timing.yaml"]) return
   configFiles["model_timing.yaml"] = [
+    "st:",
+    "  nominal_dt: 0.02",
+    "  max_dt: 0.02",
     "std:",
     "  nominal_dt: 0.01",
     "  max_dt: 0.01",
@@ -112,6 +116,7 @@ function ensureModelTiming(configFiles: Record<string, string>): void {
 export async function loadVeloxBundle(): Promise<VeloxConfigBundle> {
   const configDir = path.join(process.cwd(), "config")
   const parameterDir = path.join(process.cwd(), "parameters")
+  const tracks = await loadTracks()
 
   const configFiles = await readYamlDirectory(configDir)
   ensureModelTiming(configFiles)
@@ -125,6 +130,7 @@ export async function loadVeloxBundle(): Promise<VeloxConfigBundle> {
       "vehicle/",
       (name) => allowedVehicleIds.has(vehicleIdFromName(name) ?? -1)
     )),
+    ...(await readYamlDirectory(path.join(parameterDir, "st"), "st/")),
   }
 
   const vehicles = await loadVehicleOptions(path.join(parameterDir, "vehicle"), allowedVehicleIds)
@@ -135,5 +141,6 @@ export async function loadVeloxBundle(): Promise<VeloxConfigBundle> {
     configFiles,
     parameterFiles,
     vehicles,
+    tracks,
   }
 }

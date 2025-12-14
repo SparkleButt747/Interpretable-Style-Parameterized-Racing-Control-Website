@@ -91,6 +91,10 @@ export class LowSpeedSafety {
     return this.indices.longitudinalIndex;
   }
 
+  steeringIndex(): number | undefined {
+    return this.indices.steeringIndex;
+  }
+
   private activeProfile(): LowSpeedSafetyProfile {
     return this.driftEnabled ? this.config.drift : this.config.normal;
   }
