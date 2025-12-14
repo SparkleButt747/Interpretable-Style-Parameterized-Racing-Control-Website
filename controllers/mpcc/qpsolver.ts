@@ -29,13 +29,18 @@ export interface QpOptions {
   warm_start_z?: Float64Array;
 }
 
-const defaultOpts: Required<QpOptions> = {
+type QpRequired = Required<Omit<QpOptions, 'warm_start_x' | 'warm_start_z'>> &
+  Pick<QpOptions, 'warm_start_x' | 'warm_start_z'>;
+
+const defaultOpts: QpRequired = {
   rho: 0.2,
   alpha: 1.6,
   max_iter: 120,
   eps_abs: 1e-3,
   eps_rel: 1e-3,
   reg: 1e-5,
+  warm_start_x: undefined,
+  warm_start_z: undefined,
 };
 
 /**

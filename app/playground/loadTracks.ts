@@ -348,10 +348,10 @@ function reorderCheckpointsWithFov(
       range = clamp(range * 1.2, baseRange, maxRange);
       if (halfAngle >= maxHalfAngle && range >= maxRange * 0.95) {
         // Fallback: pick nearest forward-ish checkpoint
-        let best: { cp: TrackCheckpoint; score: number; dist: number } | null = null;
-        unvisited.forEach((id) => {
+        let best: { cp: TrackCheckpoint; score: number; dist: number } | undefined;
+        for (const id of unvisited) {
           const cp = getById.get(id);
-          if (!cp) return;
+          if (!cp) continue;
           const dx = cp.position.x - pos.x;
           const dy = cp.position.y - pos.y;
           const dist = Math.hypot(dx, dy);
@@ -362,16 +362,17 @@ function reorderCheckpointsWithFov(
           if (!best || score < best.score) {
             best = { cp, score, dist };
           }
-        });
+        }
         if (best) {
+          const { cp } = best;
           const nextHeading = normalize({
-            x: best.cp.position.x - pos.x,
-            y: best.cp.position.y - pos.y,
+            x: cp.position.x - pos.x,
+            y: cp.position.y - pos.y,
           });
           heading = mixDir(heading, nextHeading, 0.6);
-          pos = best.cp.position;
-          unvisited.delete(best.cp.id);
-          ordered.push(best.cp);
+          pos = cp.position;
+          unvisited.delete(cp.id);
+          ordered.push(cp);
           halfAngle = baseHalfAngle;
           range = baseRange;
           continue;
@@ -494,7 +495,7 @@ function scaleTrack(cones: TrackCone[], factor: number): TrackCone[] {
   }));
 }
 
-function buildMetadata(cones: TrackCone[], _trackId?: string): TrackMetadata {
+function buildMetadata(cones: TrackCone[]): TrackMetadata {
   const bounds = computeBounds(cones);
   const { checkpoints, pairs } = buildCheckpoints(cones);
   const { start, finish, heading, isLoop } = startFinishFromPairs(pairs, bounds);
@@ -580,7 +581,7 @@ export async function loadTracks(): Promise<TrackDefinition[]> {
       const cones = scaleTrack(parsedCones, TRACK_SCALE_FACTOR);
       const slug = file.replace(/\.csv$/i, "");
       const label = toLabel(slug);
-      const metadata = buildMetadata(cones, slug);
+      const metadata = buildMetadata(cones);
       const description = TRACK_DESCRIPTION_OVERRIDES[slug.toLowerCase()] ?? `Track loaded from ${TRACK_DIR}/${file}`;
       tracks.push({
         id: slug,
