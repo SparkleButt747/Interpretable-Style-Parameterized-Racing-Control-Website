@@ -73,9 +73,6 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
-  "optionalDependencies": {
-    "osqp.js": "github:osqp/osqp.js"
-  },
   "engines": {
     "node": "22.x"
   }
