@@ -52,21 +52,9 @@ export type TrackCheckpoint = {
   position: Vec2;
   order: number;
   radius: number;
-};
-
-export type TrackCenterlineSample = {
-  s: number;
-  position: Vec2;
-  tangent: Vec2;
-  normal: Vec2;
-  curvature: number;
-  halfWidth: number;
-};
-
-export type TrackMpccMap = {
-  length: number;
-  resolution: number;
-  samples: TrackCenterlineSample[];
+  gate: TrackLine;
+  /** Width between the paired cones at this gate. */
+  width: number;
 };
 
 export type TrackMetadata = {
@@ -80,7 +68,6 @@ export type TrackMetadata = {
   };
   isLoop?: boolean;
   note?: string;
-  mpccMap?: TrackMpccMap;
 };
 
 export type TrackDefinition = {

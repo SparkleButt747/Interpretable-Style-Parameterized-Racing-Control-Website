@@ -1,0 +1,73 @@
+---
+title: Baseline Controllers as a Foil
+description: Instead of an optimization-based controller (MPCC), we compare against simple baselines that are stable, reproducible, and easy to reason about.
+File Location: learn/controllers/mpcc-foil/index.mdx
+---
+
+<div className="mt-2 text-base leading-7 text-muted-foreground max-w-2xl">
+  Instead of an optimization-based controller (MPCC), we compare against simple baselines
+  that are stable, reproducible, and easy to reason about:
+  Pure Pursuit and Stanley for steering, plus PID for speed.
+</div>
+
+<Separator className="my-10" />
+
+## Baseline A: Pure Pursuit (steering)
+
+Pick a lookahead target and compute curvature-to-target.
+
+A common form:
+$$
+\delta = \arctan\left(\frac{2L\sin\alpha}{L_d}\right)
+$$
+
+where $\alpha$ is the angle to the lookahead point and $L_d$ is the lookahead distance.
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [DIAGRAM PLACEHOLDER] Pure pursuit geometry: target point, angle $\alpha$, chord
+</div>
+
+<Separator className="my-10" />
+
+## Baseline B: Stanley (steering)
+
+Combine heading error and cross-track error:
+
+$$
+\delta = e_\psi + \arctan\left(\frac{k_e e_y}{v+\epsilon}\right)
+$$
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
+  [DIAGRAM PLACEHOLDER] Stanley: cross-track error $e_y$ and heading error $e_\psi$
+</div>
+
+<Separator className="my-10" />
+
+## Longitudinal baseline: PID speed tracking
+
+$$
+a_x = K_p(v_t - v) + K_i\int(v_t - v)dt + K_d\frac{d(v_t - v)}{dt}
+$$
+
+<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
+  [INTERACTIVE PLACEHOLDER] Presets:
+  Conservative vs Aggressive (different $L$, gains, smoothness limits)
+</div>
+
+<Separator className="my-10" />
+
+## Why this comparison is still strong
+
+- It’s simple enough to implement robustly.
+- It has clear “knobs” (lookahead, gains, smoothing).
+- It provides fair head-to-head ghost races.
+- It keeps your focus: **interpretable style parameters**.
+
+<div className="mt-8">
+  <a
+    href="/learn/playground"
+    className="inline-flex items-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-muted/40"
+  >
+    Next: Playground →
+  </a>
+</div>

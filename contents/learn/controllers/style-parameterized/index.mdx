@@ -5,81 +5,62 @@ keywords: ["controllers", "style-parameterized", "knobs"]
 ---
 
 <div className="mt-2 text-base leading-7 text-muted-foreground max-w-2xl">
-  Here, “driving style” is not hidden in a weight matrix.
-  It is exposed as a small set of knobs you can predict before you press Run.
+  The baseline drives a lap. Style makes it drive a lap <em>like you want</em>.
+  Here, style is expressed as a small set of knobs with predictable effects.
 </div>
 
 <Separator className="my-10" />
 
-## The knob set (interpretable on purpose)
+## Style knobs (explicit)
 
-We define four high-leverage parameters:
-
-- **Apex offset** $p_{\text{apex}}$ (where the path bulges earlier/later)
-- **Entry/Exit bias** $p_{\text{bias}}$ (rotation earlier vs acceleration earlier)
-- **Risk** $p_{\text{risk}}$ (how close to friction limit we operate)
-- **Smoothness** $p_{\text{smooth}}$ (command rate / jerk preference)
+- **Apex offset** $p_{\text{apex}}$  
+- **Entry/Exit bias** $p_{\text{bias}}$  
+- **Risk** $p_{\text{risk}}$  
+- **Smoothness** $p_{\text{smooth}}$
 
 <div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [CARD GRID PLACEHOLDER] 4 cards, each with a mini corner animation and “expected effect”
+  [CARD GRID PLACEHOLDER] 4 knob cards with mini corner animations
 </div>
 
 <Separator className="my-10" />
 
 ## How style modifies the baseline
 
-Start from preview + curvature-aware speed, then modify:
+### 1) Path shaping (apex + bias)
 
-1) **Reference target** (where we aim)  
-2) **Target speed band** (how aggressive we are)  
-3) **Smoothing strength** (how quickly commands change)
-
-### 1) Reference shaping (apex and bias)
-
-Let the nominal path be $\gamma(s)$. We construct a “styled” target path $\tilde{\gamma}(s)$
-that shifts where the car sits within the lane.
+We create a styled reference inside the lane:
 
 $$
-\tilde{\gamma}(s) = \gamma(s) + d(s; p_{\text{apex}}, p_{\text{bias}})\,\mathbf{n}(s)
+\tilde{\gamma}(s)=\gamma(s)+d(s;p_{\text{apex}},p_{\text{bias}})\mathbf{n}(s)
 $$
-
-where $\mathbf{n}(s)$ is the path normal and $d(s)$ is a smooth offset profile.
 
 <div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [DIAGRAM PLACEHOLDER] Lane with normal offsets showing early/late apex
+  [DIAGRAM PLACEHOLDER] Lane-normal offset profiles for early vs late apex
 </div>
 
 <Separator className="my-10" />
 
-### 2) Risk modifies target speed
-
-We set a target speed band and scale it by risk:
+### 2) Risk scales target speed
 
 $$
-v_t(s;p_{\text{risk}}) = \eta(p_{\text{risk}})\,\sqrt{\frac{\mu g}{|\kappa(s)|+\epsilon}}
+v_t(s;p_{\text{risk}})=\eta(p_{\text{risk}})\sqrt{\frac{\mu g}{|\kappa(s)|+\epsilon}}
 $$
-
-where $\eta(\cdot)$ increases from conservative to aggressive.
 
 <div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [INTERACTIVE PLACEHOLDER] Risk slider changing speed band + friction usage
+  [INTERACTIVE PLACEHOLDER] Risk slider changes speed band + friction usage
 </div>
 
 <Separator className="my-10" />
 
-### 3) Smoothness shapes command rates
-
-Smoothness modifies rate limits / filtering strength:
+### 3) Smoothness shapes rate limits
 
 $$
 \dot{\delta}_{\max}=\dot{\delta}_{\max}(p_{\text{smooth}}),\quad
 j_{\max}=j_{\max}(p_{\text{smooth}})
 $$
 
-More smoothness ⇒ smaller rates ⇒ less jerk, often less lap time.
-
 <div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [PLOT PLACEHOLDER] Lap time vs mean jerk curve as smoothness varies
+  [PLOT PLACEHOLDER] Lap time vs mean jerk as smoothness varies (Pareto-like curve)
 </div>
 
 <Separator className="my-10" />
@@ -87,24 +68,11 @@ More smoothness ⇒ smaller rates ⇒ less jerk, often less lap time.
 ## Pseudocode (teaching version)
 
 ```text
-Inputs: state (x,y,psi,v), nominal path gamma(s), curvature kappa(s), grip mu, params p
-1) Build styled path: gamma_tilde(s) = gamma(s) + offset_profile(s,p_apex,p_bias)*normal(s)
+Inputs: state, path gamma(s), curvature kappa(s), grip mu, style params p
+1) Build styled path gamma_tilde(s) using apex/bias offsets
 2) Pick lookahead target on gamma_tilde(s) at distance L
-3) Steering: delta_cmd = clip(k_delta(v)*heading_error, bounds)
-4) Target speed: v_t = risk_scale(p_risk)*sqrt(mu*g/(|kappa|+eps)); smooth along s
-5) Longitudinal: a_x_cmd = clip(k_v*(v_t - v), bounds)
-6) Apply smoothness shaping: rate-limit delta and a_x using p_smooth
+3) Compute steering using a geometric method (Pure Pursuit or Stanley)
+4) Compute curvature-based target speed v_t(s), scaled by risk
+5) Track speed with PID to output a_x
+6) Apply rate/jerk limits controlled by smoothness
 Outputs: delta, a_x
-```
-
-<Separator className="my-10" />
-
-Before pressing Run, you should be able to say:
-
-With higher $p_{\text{apex}}$, the apex moves ___ (earlier/later)
-
-With higher $p_{\text{risk}}$, friction usage will ___ (increase/decrease)
-
-With higher $p_{\text{smooth}}$, jerk will ___ (increase/decrease)
-
-

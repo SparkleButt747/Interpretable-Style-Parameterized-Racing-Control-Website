@@ -8,7 +8,6 @@ Content coming soon for the reorganized learn pages:
 - /core/plant-and-limits — single source of truth for state, inputs, kinematic bicycle, friction circle, curvature-to-speed
 - /controllers/preview-and-speed — lookahead, target speed, gain scheduling, smoothing
 - /controllers/style-parameterized — knob set, behaviour mapping, pseudo-code
-- /controllers/mpcc-foil — MPCC idea and why weights are indirect style
 - /playground — simulator, overlays, metrics, export
   - /playground/experiments — guided experiments (predict → run → reflect)
 - /quizzes — two short quizzes and the design-your-style-for-track-X task

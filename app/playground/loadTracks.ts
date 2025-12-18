@@ -9,20 +9,17 @@ import {
   TrackBounds,
   TrackLine,
   TrackCone,
-  TrackMpccMap,
-  TrackCenterlineSample,
 } from "./types";
 
 const TRACK_DIR = "tracks";
 const DEFAULT_CONE_RADIUS = 0.35;
 const CHECKPOINT_RADIUS = 1.35;
 const EMPTY_TRACK_SPAN = 60;
-const TRACK_SCALE_FACTOR = 2.5;
-const CENTERLINE_RESOLUTION = 0.5;
-const MIN_HALF_WIDTH = 0.8;
+const TRACK_SCALE_FACTOR = 3.7;
 const TRACK_DESCRIPTION_OVERRIDES: Record<string, string> = {
   acceleration: "Flat straight-line strip for launch and braking tests.",
 };
+const LOOP_TRACK_SLUGS = new Set(["box_loop", "oval", "hairpins_increasing_difficulty"]);
 
 function toLabel(slug: string): string {
   return slug
@@ -165,97 +162,10 @@ function nearestPairs(yellows: TrackCone[], blues: TrackCone[]): ConePair[] {
   return pairs;
 }
 
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
 function normalize(vec: Vec2): Vec2 {
   const mag = Math.hypot(vec.x, vec.y);
   if (mag <= 1e-6) return { x: 1, y: 0 };
   return { x: vec.x / mag, y: vec.y / mag };
-}
-
-function curvatureAt(prev: Vec2, curr: Vec2, next: Vec2): number {
-  const ab = { x: curr.x - prev.x, y: curr.y - prev.y };
-  const bc = { x: next.x - curr.x, y: next.y - curr.y };
-  const ac = { x: next.x - prev.x, y: next.y - prev.y };
-  const cross = ab.x * bc.y - ab.y * bc.x;
-  const denom = Math.max(
-    1e-6,
-    Math.hypot(ab.x, ab.y) * Math.hypot(bc.x, bc.y) * Math.hypot(ac.x, ac.y)
-  );
-  return (2 * cross) / denom;
-}
-
-function buildCenterlineMap(pairs: ConePair[], isLoop: boolean): TrackMpccMap | undefined {
-  if (pairs.length < 2) return undefined;
-
-  const midpoints = pairs.map((p) => p.midpoint);
-  const widths = pairs.map((p) => p.distance);
-
-  if (isLoop && pairs.length > 2) {
-    midpoints.push({ ...midpoints[0] });
-    widths.push(widths[0]);
-  }
-
-  const arcLengths: number[] = [0];
-  for (let i = 1; i < midpoints.length; i += 1) {
-    const dx = midpoints[i].x - midpoints[i - 1].x;
-    const dy = midpoints[i].y - midpoints[i - 1].y;
-    arcLengths[i] = arcLengths[i - 1] + Math.hypot(dx, dy);
-  }
-  const totalLength = arcLengths[arcLengths.length - 1] ?? 0;
-  if (!(totalLength > 0)) return undefined;
-
-  const samples: TrackCenterlineSample[] = [];
-  const resolution = CENTERLINE_RESOLUTION;
-  const sampleCount = Math.max(2, Math.ceil(totalLength / resolution));
-  const targetLengths: number[] = [];
-  for (let i = 0; i <= sampleCount; i += 1) {
-    targetLengths.push(Math.min(totalLength, i * resolution));
-  }
-  if (targetLengths[targetLengths.length - 1] !== totalLength) {
-    targetLengths.push(totalLength);
-  }
-
-  let segIdx = 0;
-  targetLengths.forEach((s) => {
-    while (segIdx + 1 < arcLengths.length && arcLengths[segIdx + 1] < s) {
-      segIdx += 1;
-    }
-    const nextIdx = Math.min(segIdx + 1, midpoints.length - 1);
-    const segLength = Math.max(arcLengths[nextIdx] - arcLengths[segIdx], 1e-6);
-    const t = (s - arcLengths[segIdx]) / segLength;
-    const a = midpoints[segIdx];
-    const b = midpoints[nextIdx];
-    const widthA = widths[segIdx] ?? widths[widths.length - 1] ?? MIN_HALF_WIDTH * 2;
-    const widthB = widths[nextIdx] ?? widthA;
-    const pos = { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) };
-    const tangent = normalize({ x: b.x - a.x, y: b.y - a.y });
-    const normal = { x: -tangent.y, y: tangent.x };
-    const halfWidth = Math.max(MIN_HALF_WIDTH, lerp(widthA, widthB, t) * 0.5);
-    samples.push({
-      s,
-      position: pos,
-      tangent,
-      normal,
-      curvature: 0,
-      halfWidth,
-    });
-  });
-
-  for (let i = 0; i < samples.length; i += 1) {
-    const prev = samples[i - 1]?.position ?? samples[i].position;
-    const curr = samples[i].position;
-    const next = samples[i + 1]?.position ?? samples[i].position;
-    samples[i].curvature = curvatureAt(prev, curr, next);
-  }
-
-  return {
-    length: totalLength,
-    resolution,
-    samples,
-  };
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -293,9 +203,13 @@ function estimateSpacing(checkpoints: TrackCheckpoint[], bounds: TrackBounds): n
 function reorderCheckpointsWithFov(
   checkpoints: TrackCheckpoint[],
   bounds: TrackBounds,
-  startPose?: { position: Vec2; yaw: number }
+  startPose?: { position: Vec2; yaw: number },
+  isLoop?: boolean
 ): TrackCheckpoint[] {
   if (checkpoints.length === 0) return checkpoints;
+
+  const axisTheta = principalAxis(checkpoints.map((cp) => cp.position));
+  const axisDir = { x: Math.cos(axisTheta), y: Math.sin(axisTheta) };
 
   const spacing = estimateSpacing(checkpoints, bounds);
   const baseStep = clamp(spacing * 0.3, 0.4, 2.5);
@@ -418,7 +332,58 @@ function reorderCheckpointsWithFov(
     });
   }
 
-  return ordered.map((cp, idx) => ({ ...cp, order: idx + 1 }));
+  const rotateToStart = (list: TrackCheckpoint[]): TrackCheckpoint[] => {
+    if (!startPose || list.length === 0) return list;
+    let bestIdx = -1;
+    let bestDist = Number.POSITIVE_INFINITY;
+    list.forEach((cp, idx) => {
+      const dx = cp.position.x - startPose.position.x;
+      const dy = cp.position.y - startPose.position.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = idx;
+      }
+    });
+    if (bestIdx <= 0) return list;
+    return [...list.slice(bestIdx), ...list.slice(0, bestIdx)];
+  };
+
+  const rotateAndNumber = (list: TrackCheckpoint[]) =>
+    rotateToStart(list).map((cp, idx) => ({ ...cp, order: idx + 1 }));
+
+  const toAxisProjections = (list: TrackCheckpoint[]) =>
+    list.map((cp) => cp.position.x * axisDir.x + cp.position.y * axisDir.y);
+
+  const aligned = rotateToStart(ordered);
+  const alignedProjections = toAxisProjections(aligned);
+  const tol = Math.max(0.25, spacing * 0.2);
+
+  if (!isLoop) {
+    let monotonic = true;
+    for (let i = 1; i < alignedProjections.length; i += 1) {
+      if (alignedProjections[i] + tol < alignedProjections[i - 1]) {
+        monotonic = false;
+        break;
+      }
+    }
+    if (monotonic) {
+      return aligned.map((cp, idx) => ({ ...cp, order: idx + 1 }));
+    }
+
+    // Non-loop S-shapes (e.g., Esses): fallback to axis sort to avoid oscillations.
+    const axisSorted = checkpoints
+      .slice()
+      .sort(
+        (a, b) =>
+          a.position.x * axisDir.x +
+          a.position.y * axisDir.y -
+          (b.position.x * axisDir.x + b.position.y * axisDir.y)
+      );
+    return rotateAndNumber(axisSorted);
+  }
+
+  return aligned.map((cp, idx) => ({ ...cp, order: idx + 1 }));
 }
 
 function buildCheckpoints(cones: TrackCone[]): { checkpoints: TrackCheckpoint[]; pairs: ConePair[] } {
@@ -445,6 +410,12 @@ function buildCheckpoints(cones: TrackCone[]): { checkpoints: TrackCheckpoint[];
     position: pair.midpoint,
     order: idx + 1,
     radius: CHECKPOINT_RADIUS,
+    gate: {
+      id: `cp-${idx}-gate`,
+      a: { x: pair.yellow.x, y: pair.yellow.y },
+      b: { x: pair.blue.x, y: pair.blue.y },
+    },
+    width: pair.distance,
   }));
 
   return { checkpoints, pairs: sorted };
@@ -452,7 +423,8 @@ function buildCheckpoints(cones: TrackCone[]): { checkpoints: TrackCheckpoint[];
 
 function startFinishFromPairs(
   pairs: ConePair[],
-  bounds: TrackBounds
+  bounds: TrackBounds,
+  forcedIsLoop?: boolean
 ): { start?: TrackLine; finish?: TrackLine; heading: number; isLoop: boolean } {
   if (pairs.length === 0) return { heading: 0, isLoop: false };
   const first = pairs[0];
@@ -473,7 +445,8 @@ function startFinishFromPairs(
   };
   const loopThreshold = Math.max(2.5, bounds.span / 8);
   const loopDistance = Math.hypot(last.midpoint.x - first.midpoint.x, last.midpoint.y - first.midpoint.y);
-  const isLoop = pairs.length > 2 && loopDistance <= loopThreshold;
+  const detectedLoop = pairs.length > 2 && loopDistance <= loopThreshold;
+  const isLoop = forcedIsLoop !== undefined ? forcedIsLoop : detectedLoop;
 
   return {
     start: startLine,
@@ -495,10 +468,11 @@ function scaleTrack(cones: TrackCone[], factor: number): TrackCone[] {
   }));
 }
 
-function buildMetadata(cones: TrackCone[]): TrackMetadata {
+function buildMetadata(cones: TrackCone[], slug?: string): TrackMetadata {
   const bounds = computeBounds(cones);
   const { checkpoints, pairs } = buildCheckpoints(cones);
-  const { start, finish, heading, isLoop } = startFinishFromPairs(pairs, bounds);
+  const loopOverride = slug ? LOOP_TRACK_SLUGS.has(slug.toLowerCase()) : undefined;
+  const { start, finish, heading, isLoop } = startFinishFromPairs(pairs, bounds, loopOverride);
   const nextMidpoint = pairs[1]?.midpoint ?? pairs[0]?.midpoint;
   let startYaw = heading;
   if (start) {
@@ -513,24 +487,7 @@ function buildMetadata(cones: TrackCone[]): TrackMetadata {
   const startPose = start
     ? { position: midpoint(start.a, start.b), yaw: startYaw }
     : { position: { x: 0, y: 0 }, yaw: 0 };
-  const orderedCheckpoints = reorderCheckpointsWithFov(checkpoints, bounds, startPose);
-  const pairById = new Map(pairs.map((pair, idx) => [`cp-${idx}`, pair]));
-  const orderedPairs = orderedCheckpoints
-    .map((cp) => pairById.get(cp.id))
-    .filter((p): p is ConePair => !!p);
-  const pairsForMap = orderedPairs.length >= 2 ? orderedPairs : pairs;
-  const startIdx = pairsForMap.reduce(
-    (best, pair, idx) => {
-      const dx = pair.midpoint.x - startPose.position.x;
-      const dy = pair.midpoint.y - startPose.position.y;
-      const distSq = dx * dx + dy * dy;
-      return distSq < best.distSq ? { idx, distSq } : best;
-    },
-    { idx: 0, distSq: Infinity }
-  ).idx;
-  const rotatedPairs =
-    pairsForMap.length > 0 ? [...pairsForMap.slice(startIdx), ...pairsForMap.slice(0, startIdx)] : pairsForMap;
-  const mpccMap = buildCenterlineMap(rotatedPairs, isLoop);
+  const orderedCheckpoints = reorderCheckpointsWithFov(checkpoints, bounds, startPose, isLoop);
 
   return {
     bounds,
@@ -539,7 +496,6 @@ function buildMetadata(cones: TrackCone[]): TrackMetadata {
     checkpoints: orderedCheckpoints,
     startPose,
     isLoop,
-    mpccMap,
   };
 }
 
@@ -581,7 +537,7 @@ export async function loadTracks(): Promise<TrackDefinition[]> {
       const cones = scaleTrack(parsedCones, TRACK_SCALE_FACTOR);
       const slug = file.replace(/\.csv$/i, "");
       const label = toLabel(slug);
-      const metadata = buildMetadata(cones);
+      const metadata = buildMetadata(cones, slug);
       const description = TRACK_DESCRIPTION_OVERRIDES[slug.toLowerCase()] ?? `Track loaded from ${TRACK_DIR}/${file}`;
       tracks.push({
         id: slug,

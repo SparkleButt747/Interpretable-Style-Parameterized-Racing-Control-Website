@@ -1,12 +1,10 @@
 export enum ModelType {
   ST = 'ST',
-  STD = 'STD',
 }
 
 export enum ControlMode {
   Keyboard = 'Keyboard',
   Direct = 'Direct',
-  MPCC = 'MPCC',
 }
 
 export interface ModelTimingInfo {

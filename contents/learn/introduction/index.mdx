@@ -6,67 +6,32 @@ keywords: ["introduction", "overview", "challenge mode"]
 
 <div className="mt-6 mb-10 text-base leading-7 text-muted-foreground max-w-2xl">
   You output <strong>two numbers</strong> every few milliseconds:
-  <strong> steering</strong> and <strong>throttle/brake</strong>.
-  Everything else is choosing them well—given the path, the limits, and the style you want.
+  <strong> steering</strong> $\delta$ and <strong>throttle/brake</strong> $a_x$.
+  This project shows how a small, interpretable controller can drive with different “styles”
+  by changing a few meaningful parameters.
 </div>
 
-<div className="mb-10 rounded-2xl border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-  [HERO PLACEHOLDER] Loop animation: state → controller → inputs → motion → repeat
-  <div className="mt-2 opacity-70">
-    (Overlay: steering $\delta$, longitudinal $a_x$, and a “style knob” panel)
-  </div>
-</div>
+<IntroLoopHero />
 
 <Separator className="my-10" />
 
-## What this course project teaches
+## What you’ll learn (in one hour)
 
-You’ll learn to reason about racing control in a way that is **predictable** and **teachable**:
-
-- Start from a naive “aim at a point and go” baseline.
-- Add just enough physics and constraints to explain real failure modes.
-- Build an **interpretable** controller where *style is explicit*.
-- Compare against an **MPCC-like** baseline where style is mostly hidden in weights.
-
-<Separator className="my-10" />
-
-## Your mission
-
-By the end you should be able to:
-
-1) Predict how changing **lookahead** changes stability and apexing  
-2) Explain why curvature forces a speed limit (grip budget)  
-3) Use knobs like **apex offset** and **entry/exit bias** to “shape” driving  
-4) Justify trade-offs: lap time vs jerk vs consistency  
-
-<div className="mt-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [FIGURE PLACEHOLDER] “Knob → behaviour” montage (4 mini panels)
-  <ul className="list-disc pl-5 mt-2 space-y-1">
-    <li>Apex offset shifts where the car cuts the corner</li>
-    <li>Entry/exit bias shifts when you rotate vs accelerate</li>
-    <li>Risk changes how close you run to friction saturation</li>
-    <li>Smoothness shapes command rates / jerk</li>
-  </ul>
-</div>
+- Why “just steer to the next point” fails (oscillation / lazy apex / too-fast entry)
+- How preview (lookahead) stabilizes steering
+- How curvature implies a speed limit (grip budget)
+- How simple PID speed control tracks a curvature-limited target speed
+- How “style” can be exposed as explicit knobs (apex offset, entry/exit bias, risk, smoothness)
+- How your style-parameterized controller compares to simple baselines (Pure Pursuit / Stanley + PID)
 
 <Separator className="my-10" />
 
-## Challenge mode: beat the ghosts
+## Challenge mode
 
-You’ll tune a style-parameterized controller and race:
+Tune style knobs and try to beat:
+1) a conservative baseline, and  
+2) an aggressive baseline.  
 
-- A conservative preview baseline
-- An MPCC-like “ghost” (strong baseline)
+Same track, same start. Your job: pick parameters that fit the corner sequence.
 
-<div className="mb-10 rounded-2xl border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-  [SIM PLACEHOLDER] Split-screen ghost race + lap delta ribbon
-</div>
-
-<Separator className="my-10" />
-
-## Start here
-
-- If you want the big picture: read **The Problem** next.
-- If you want definitions and scope: go to **Scope & Glossary**.
-
-
+<ChallengeGhostPlayground />

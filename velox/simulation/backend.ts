@@ -1,5 +1,4 @@
 import { ConfigManager } from '../io/ConfigManager';
-import packagedNativeFactory from './nativeFactory';
 import { ModelType } from './types';
 import type { SimulationTelemetry } from '../telemetry/index';
 import { JsSimulationBackend } from './jsBackend';
@@ -19,34 +18,6 @@ export interface SimulationBackend {
   speed(): number;
 }
 
-export interface NativeDaemonHandle {
-  reset(state: number[], dt: number): void;
-  step(control: number[], dt: number): void;
-  snapshot(): BackendSnapshot;
-  speed(): number;
-}
-
-export interface NativeDaemonFactory {
-  (options: {
-    model: ModelType;
-    vehicleParameters: Record<string, unknown>;
-    lowSpeedSafety: Record<string, any>;
-    lossOfControl: Record<string, any>;
-  }): Promise<NativeDaemonHandle>;
-}
-
-interface LossOfControlChannelThresholds {
-  threshold: number;
-  rate: number;
-}
-
-interface LossOfControlConfig {
-  yaw_rate: LossOfControlChannelThresholds;
-  slip_angle: LossOfControlChannelThresholds;
-  lateral_accel: LossOfControlChannelThresholds;
-  slip_ratio: LossOfControlChannelThresholds;
-}
-
 interface LowSpeedRegimeConfig {
   engage_speed: number;
   release_speed: number;
@@ -62,9 +33,7 @@ interface LowSpeedSafetyConfig {
 }
 
 /**
- * Hybrid backend that always uses a native daemon (packaged WASM or provided
- * factory). Initialization fails fast when a concrete daemon cannot be
- * constructed so we do not silently fall back to a kinematic approximation.
+ * Simple backend wrapper that always uses the JS kinematic bicycle model.
  */
 export class HybridSimulationBackend implements SimulationBackend {
   private delegate!: SimulationBackend;
@@ -72,10 +41,9 @@ export class HybridSimulationBackend implements SimulationBackend {
 
   constructor(
     private readonly options: {
-      model: ModelType;
-      vehicleId: number;
+      model?: ModelType;
+      vehicleId?: number;
       configManager: ConfigManager;
-      nativeFactory?: NativeDaemonFactory;
       driftEnabled: boolean;
     }
   ) {
@@ -101,86 +69,36 @@ export class HybridSimulationBackend implements SimulationBackend {
   }
 
   private async initialize(): Promise<void> {
-    const { configManager, vehicleId, model } = this.options;
-
-    const fallbackDefaults = await this.loadConfigs(configManager, vehicleId, model).catch((error) => {
+    const model = this.options.model ?? ModelType.ST;
+    const vehicleId = this.options.vehicleId ?? 0;
+    const fallbackDefaults = await this.loadConfigs(this.options.configManager, vehicleId, model).catch((error) => {
       console.warn(`HybridSimulationBackend failed to load configs; using defaults: ${error}`);
       return {
         vehicle: {},
         lowSpeed: defaultLowSpeedSafety(),
-        loss: defaultLossOfControlConfig(model),
       };
     });
 
-    if (model === ModelType.ST) {
-      this.delegate = new JsSimulationBackend({
-        model,
-        params: fallbackDefaults.vehicle as any,
-        lowSpeed: fallbackDefaults.lowSpeed,
-        lossConfig: fallbackDefaults.loss,
-        driftEnabled: false,
-      });
-      return;
-    }
-
-    const factory = this.options.nativeFactory ?? packagedNativeFactory;
-
-    if (!factory) {
-      throw new Error('HybridSimulationBackend requires a native backend factory for the STD model');
-    }
-
-    try {
-      const native = await factory({
-        model,
-        vehicleParameters: fallbackDefaults.vehicle,
-        lowSpeedSafety: fallbackDefaults.lowSpeed,
-        lossOfControl: fallbackDefaults.loss,
-      });
-      this.delegate = new NativeSimulationBackend(native);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : `${error}`;
-      throw new Error(`HybridSimulationBackend initialization failed: ${message}`);
-    }
+    this.delegate = new JsSimulationBackend({
+      model,
+      params: fallbackDefaults.vehicle as any,
+      lowSpeed: fallbackDefaults.lowSpeed,
+      driftEnabled: this.options.driftEnabled,
+    });
   }
 
   private async loadConfigs(configManager: ConfigManager, vehicleId: number, model: ModelType) {
-    const [vehicle, lowSpeedDoc, lossDoc] = await Promise.all([
+    const [vehicle, lowSpeedDoc] = await Promise.all([
       configManager.loadModelParameters(vehicleId, model),
       configManager.loadLowSpeedSafetyConfig(model),
-      configManager.loadLossOfControlDetectorConfig(model),
     ]);
 
     const lowSpeed = parseConfigDocument(lowSpeedDoc) as Record<string, any>;
-    const lossRoot = parseConfigDocument(lossDoc) as Record<string, any>;
-    const loss = (lossRoot && typeof lossRoot === 'object' && lossRoot[modelKey(model)])
-      ? (lossRoot[modelKey(model)] as Record<string, any>)
-      : lossRoot;
 
     return {
       vehicle: ensureObject(vehicle),
       lowSpeed: normalizeLowSpeedSafety(lowSpeed),
-      loss: normalizeLossOfControl(loss, model),
     };
-  }
-}
-
-class NativeSimulationBackend implements SimulationBackend {
-  constructor(private readonly handle: NativeDaemonHandle) {}
-
-  reset(state: number[], dt: number): void {
-    this.handle.reset(state, dt);
-  }
-
-  step(control: number[], dt: number): void {
-    this.handle.step(control, dt);
-  }
-
-  snapshot(): BackendSnapshot {
-    return this.handle.snapshot();
-  }
-
-  speed(): number {
-    return this.handle.speed();
   }
 }
 
@@ -227,17 +145,6 @@ function ensureObject(value: unknown): Record<string, unknown> {
   return {};
 }
 
-function modelKey(model: ModelType): string {
-  switch (model) {
-    case ModelType.ST:
-      return 'st';
-    case ModelType.STD:
-      return 'std';
-    default:
-      return 'std';
-  }
-}
-
 function normalizeLowSpeedSafety(raw: Record<string, any>): LowSpeedSafetyConfig {
   const base = defaultLowSpeedSafety();
   const merged: LowSpeedSafetyConfig = {
@@ -268,20 +175,6 @@ function normalizeLowSpeedSafety(raw: Record<string, any>): LowSpeedSafetyConfig
   return merged;
 }
 
-function normalizeLossOfControl(raw: Record<string, any>, model: ModelType): LossOfControlConfig {
-  const defaults = defaultLossOfControlConfig(model);
-  const result: LossOfControlConfig = { ...defaults };
-  for (const key of ['yaw_rate', 'slip_angle', 'lateral_accel', 'slip_ratio']) {
-    const channel = raw?.[key];
-    if (channel && typeof channel === 'object') {
-      const threshold = Number(channel.threshold ?? result[key as keyof LossOfControlConfig]?.threshold ?? 0);
-      const rate = Number(channel.rate ?? result[key as keyof LossOfControlConfig]?.rate ?? 1);
-      (result as any)[key] = { threshold, rate };
-    }
-  }
-  return result;
-}
-
 function coerceBoolean(value: any, fallback: boolean): boolean {
   if (typeof value === 'boolean') return value;
   if (value === 'true') return true;
@@ -296,30 +189,4 @@ function defaultLowSpeedSafety(): LowSpeedSafetyConfig {
     normal: { engage_speed: 0.4, release_speed: 0.8, yaw_rate_limit: 0.5, slip_angle_limit: 0.35 },
     drift: { engage_speed: 0.3, release_speed: 1.0, yaw_rate_limit: 0.8, slip_angle_limit: 0.6 },
   };
-}
-
-function defaultLossOfControlConfig(model: ModelType): LossOfControlConfig {
-  switch (model) {
-    case ModelType.ST:
-      return {
-        yaw_rate: { threshold: 1e6, rate: 1e6 },
-        slip_angle: { threshold: 1e6, rate: 1e6 },
-        lateral_accel: { threshold: 1e6, rate: 1e6 },
-        slip_ratio: { threshold: 1e6, rate: 1e6 },
-      };
-    case ModelType.STD:
-      return {
-        yaw_rate: { threshold: 1.4, rate: 10 },
-        slip_angle: { threshold: 0.8, rate: 5 },
-        lateral_accel: { threshold: 7.0, rate: 14 },
-        slip_ratio: { threshold: 0.5, rate: 7 },
-      };
-    default:
-      return {
-        yaw_rate: { threshold: 1.4, rate: 10 },
-        slip_angle: { threshold: 0.8, rate: 5 },
-        lateral_accel: { threshold: 7.0, rate: 14 },
-        slip_ratio: { threshold: 0.5, rate: 7 },
-      };
-  }
 }

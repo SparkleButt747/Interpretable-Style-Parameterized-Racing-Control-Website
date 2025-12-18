@@ -1,12 +1,8 @@
 import {
-  VehicleParameters,
-  LongitudinalParameters,
-  SteeringParameters,
-  TireParameters,
-  TrailerParameters,
   SingleTrackParameters,
   ModelParameters,
 } from '../models/types';
+import { defaultStyleParamConfig, type StyleParamControllerConfig } from '../../controllers/style-param';
 import { ModelTimingInfo, ModelType } from '../simulation/types';
 
 export type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -24,14 +20,8 @@ function siblingConfigRoot(parameterRoot: string): string {
 }
 
 function modelKey(model: ModelType): string {
-  switch (model) {
-    case ModelType.ST:
-      return 'st';
-    case ModelType.STD:
-      return 'std';
-    default:
-      return 'std';
-  }
+  void model;
+  return 'st';
 }
 
 async function ensureAvailable(fetcher: Fetcher, url: string, description: string): Promise<void> {
@@ -43,7 +33,7 @@ async function ensureAvailable(fetcher: Fetcher, url: string, description: strin
   }
 }
 
-function parseScalar(value: string): any {
+function parseScalar(value: string): number | boolean | string {
   const numeric = Number(value);
   if (Number.isFinite(numeric)) return numeric;
   if (value === 'true') return true;
@@ -51,12 +41,12 @@ function parseScalar(value: string): any {
   return value;
 }
 
-function parseYamlLike(document: string): Record<string, any> {
-  const result: Record<string, any> = {};
+function parseYamlLike(document: string): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
   const lines = document
     .split(/\r?\n/)
     .filter((line) => line.trim().length > 0 && !line.trim().startsWith('#'));
-  const stack: Array<{ indent: number; target: Record<string, any> }> = [{ indent: -1, target: result }];
+  const stack: Array<{ indent: number; target: Record<string, unknown> }> = [{ indent: -1, target: result }];
 
   for (const raw of lines) {
     const match = raw.match(/^(\s*)([^:]+):\s*(.*)$/);
@@ -70,7 +60,7 @@ function parseYamlLike(document: string): Record<string, any> {
     }
     const parent = stack[stack.length - 1].target;
     if (valuePart === '') {
-      const child: Record<string, any> = {};
+      const child: Record<string, unknown> = {};
       parent[key] = child;
       stack.push({ indent, target: child });
     } else {
@@ -80,156 +70,41 @@ function parseYamlLike(document: string): Record<string, any> {
   return result;
 }
 
-function ensureNumber(value: any, fallback = 0): number {
+function ensureNumber(value: unknown, fallback = 0): number {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
 }
 
-function normalizeSteering(raw: any = {}): SteeringParameters {
+function normalizeStSteering(raw: unknown = {}): SingleTrackParameters['steering'] {
+  const steering = (raw ?? {}) as Record<string, unknown>;
   return {
-    min: ensureNumber(raw.min),
-    max: ensureNumber(raw.max),
-    v_min: ensureNumber(raw.v_min),
-    v_max: ensureNumber(raw.v_max),
-    kappa_dot_max: ensureNumber(raw.kappa_dot_max),
-    kappa_dot_dot_max: ensureNumber(raw.kappa_dot_dot_max),
+    min: ensureNumber(steering.min, -0.6),
+    max: ensureNumber(steering.max, 0.6),
+    rate_min: ensureNumber(steering.rate_min ?? steering.rate_min_rad ?? steering.rate_limit_min, -3),
+    rate_max: ensureNumber(steering.rate_max ?? steering.rate_max_rad ?? steering.rate_limit_max, 3),
   };
 }
 
-function normalizeLongitudinal(raw: any = {}): LongitudinalParameters {
+function normalizeStAccel(raw: unknown = {}): SingleTrackParameters['accel'] {
+  const accel = (raw ?? {}) as Record<string, unknown>;
   return {
-    v_min: ensureNumber(raw.v_min),
-    v_max: ensureNumber(raw.v_max),
-    v_switch: ensureNumber(raw.v_switch),
-    a_max: ensureNumber(raw.a_max),
-    j_max: ensureNumber(raw.j_max),
-    j_dot_max: ensureNumber(raw.j_dot_max),
+    min: ensureNumber(accel.min ?? accel.min_accel, -6),
+    max: ensureNumber(accel.max ?? accel.max_accel, 4),
+    jerk_max: ensureNumber(accel.jerk_max ?? accel.max_jerk ?? accel.jerk, 0),
   };
 }
 
-function normalizeTrailer(raw: any = {}): TrailerParameters {
+function normalizeSingleTrack(raw: unknown): SingleTrackParameters {
+  const data = (raw ?? {}) as Record<string, unknown>;
+  const steering = normalizeStSteering((data.steering as unknown) ?? {});
+  const accel = normalizeStAccel((data.accel as unknown) ?? (data.acceleration as unknown) ?? {});
   return {
-    l: ensureNumber(raw.l),
-    w: ensureNumber(raw.w),
-    l_hitch: ensureNumber(raw.l_hitch),
-    l_total: ensureNumber(raw.l_total),
-    l_wb: ensureNumber(raw.l_wb),
-  };
-}
-
-function normalizeTire(raw: any = {}): TireParameters {
-  const src = raw.tire && typeof raw.tire === 'object' ? raw.tire : raw;
-  return {
-    p_cx1: ensureNumber(src.p_cx1),
-    p_dx1: ensureNumber(src.p_dx1),
-    p_dx3: ensureNumber(src.p_dx3),
-    p_ex1: ensureNumber(src.p_ex1),
-    p_kx1: ensureNumber(src.p_kx1),
-    p_hx1: ensureNumber(src.p_hx1),
-    p_vx1: ensureNumber(src.p_vx1),
-    r_bx1: ensureNumber(src.r_bx1),
-    r_bx2: ensureNumber(src.r_bx2),
-    r_cx1: ensureNumber(src.r_cx1),
-    r_ex1: ensureNumber(src.r_ex1),
-    r_hx1: ensureNumber(src.r_hx1),
-    p_cy1: ensureNumber(src.p_cy1),
-    p_dy1: ensureNumber(src.p_dy1),
-    p_dy3: ensureNumber(src.p_dy3),
-    p_ey1: ensureNumber(src.p_ey1),
-    p_ky1: ensureNumber(src.p_ky1),
-    p_hy1: ensureNumber(src.p_hy1),
-    p_hy3: ensureNumber(src.p_hy3),
-    p_vy1: ensureNumber(src.p_vy1),
-    p_vy3: ensureNumber(src.p_vy3),
-    r_by1: ensureNumber(src.r_by1),
-    r_by2: ensureNumber(src.r_by2),
-    r_by3: ensureNumber(src.r_by3),
-    r_cy1: ensureNumber(src.r_cy1),
-    r_ey1: ensureNumber(src.r_ey1),
-    r_hy1: ensureNumber(src.r_hy1),
-    r_vy1: ensureNumber(src.r_vy1),
-    r_vy3: ensureNumber(src.r_vy3),
-    r_vy4: ensureNumber(src.r_vy4),
-    r_vy5: ensureNumber(src.r_vy5),
-    r_vy6: ensureNumber(src.r_vy6),
-  };
-}
-
-function normalizeVehicle(raw: any, tire: TireParameters): VehicleParameters {
-  const steering = normalizeSteering(raw?.steering ?? {});
-  const longitudinal = normalizeLongitudinal(raw?.longitudinal ?? {});
-  const trailer = normalizeTrailer(raw?.trailer ?? {});
-  return {
-    l: ensureNumber(raw?.l),
-    w: ensureNumber(raw?.w),
-    steering,
-    longitudinal,
-    m: ensureNumber(raw?.m),
-    m_s: ensureNumber(raw?.m_s),
-    m_uf: ensureNumber(raw?.m_uf),
-    m_ur: ensureNumber(raw?.m_ur),
-    a: ensureNumber(raw?.a),
-    b: ensureNumber(raw?.b),
-    I_Phi_s: ensureNumber(raw?.I_Phi_s),
-    I_y_s: ensureNumber(raw?.I_y_s),
-    I_z: ensureNumber(raw?.I_z),
-    I_xz_s: ensureNumber(raw?.I_xz_s),
-    K_sf: ensureNumber(raw?.K_sf),
-    K_sdf: ensureNumber(raw?.K_sdf),
-    K_sr: ensureNumber(raw?.K_sr),
-    K_sdr: ensureNumber(raw?.K_sdr),
-    T_f: ensureNumber(raw?.T_f),
-    T_r: ensureNumber(raw?.T_r),
-    K_ras: ensureNumber(raw?.K_ras),
-    K_tsf: ensureNumber(raw?.K_tsf),
-    K_tsr: ensureNumber(raw?.K_tsr),
-    K_rad: ensureNumber(raw?.K_rad),
-    K_zt: ensureNumber(raw?.K_zt),
-    h_cg: ensureNumber(raw?.h_cg),
-    h_raf: ensureNumber(raw?.h_raf),
-    h_rar: ensureNumber(raw?.h_rar),
-    h_s: ensureNumber(raw?.h_s),
-    I_uf: ensureNumber(raw?.I_uf),
-    I_ur: ensureNumber(raw?.I_ur),
-    I_y_w: ensureNumber(raw?.I_y_w),
-    K_lt: ensureNumber(raw?.K_lt),
-    R_w: ensureNumber(raw?.R_w),
-    T_sb: ensureNumber(raw?.T_sb),
-    T_se: ensureNumber(raw?.T_se),
-    D_f: ensureNumber(raw?.D_f),
-    D_r: ensureNumber(raw?.D_r),
-    E_f: ensureNumber(raw?.E_f),
-    E_r: ensureNumber(raw?.E_r),
-    tire,
-    trailer,
-  };
-}
-
-function normalizeStSteering(raw: any = {}): SingleTrackParameters['steering'] {
-  return {
-    min: ensureNumber(raw.min, -0.6),
-    max: ensureNumber(raw.max, 0.6),
-    rate_min: ensureNumber(raw.rate_min ?? raw.rate_min_rad ?? raw.rate_limit_min, -3),
-    rate_max: ensureNumber(raw.rate_max ?? raw.rate_max_rad ?? raw.rate_limit_max, 3),
-  };
-}
-
-function normalizeStAccel(raw: any = {}): SingleTrackParameters['accel'] {
-  return {
-    min: ensureNumber(raw.min ?? raw.min_accel, -6),
-    max: ensureNumber(raw.max ?? raw.max_accel, 4),
-  };
-}
-
-function normalizeSingleTrack(raw: any): SingleTrackParameters {
-  const steering = normalizeStSteering(raw?.steering ?? {});
-  const accel = normalizeStAccel(raw?.accel ?? raw?.acceleration ?? {});
-  return {
-    l_f: ensureNumber(raw?.l_f ?? raw?.a ?? raw?.lf),
-    l_r: ensureNumber(raw?.l_r ?? raw?.b ?? raw?.lr),
-    m: ensureNumber(raw?.m),
-    I_z: ensureNumber(raw?.I_z ?? raw?.Izz ?? raw?.I),
-    lat_accel_max: ensureNumber(raw?.lat_accel_max ?? 6),
+    l_f: ensureNumber(data.l_f ?? data.a ?? data.lf),
+    l_r: ensureNumber(data.l_r ?? data.b ?? data.lr),
+    m: ensureNumber(data.m),
+    I_z: ensureNumber(data.I_z ?? data.Izz ?? data.I),
+    lat_accel_max: ensureNumber(data.lat_accel_max ?? 6),
+    mu: ensureNumber(data.mu ?? data.friction_coefficient, 0),
     steering,
     accel,
   };
@@ -260,20 +135,6 @@ export class ConfigManager {
     this.rootsChecked = true;
   }
 
-  async loadVehicleParameters(vehicleId: number): Promise<VehicleParameters> {
-    await this.verifyRoots();
-    const vehiclePath = this.resolveParameterPath(`vehicle/parameters_vehicle${vehicleId}.yaml`);
-    const tirePath = this.resolveParameterPath('tire/parameters_tire.yaml');
-    const [vehicleDoc, tireDoc] = await Promise.all([
-      this.fetchDocument(vehiclePath, `vehicle parameters for id ${vehicleId}`),
-      this.fetchDocument(tirePath, 'tire parameters'),
-    ]);
-    const vehicleObj = this.parseDocument(vehicleDoc);
-    const tireObj = this.parseDocument(tireDoc);
-    const tire = normalizeTire(tireObj);
-    return normalizeVehicle(vehicleObj, tire);
-  }
-
   async loadSingleTrackParameters(path = 'st/vehicle.yaml'): Promise<SingleTrackParameters> {
     await this.verifyRoots();
     const document = await this.fetchDocument(this.resolveParameterPath(path), 'single-track parameters');
@@ -282,43 +143,12 @@ export class ConfigManager {
   }
 
   async loadModelParameters(vehicleId: number, model: ModelType): Promise<ModelParameters> {
-    if (model === ModelType.ST) {
-      return this.loadSingleTrackParameters().catch(() => normalizeSingleTrack({}));
-    }
-    return this.loadVehicleParameters(vehicleId);
+    void vehicleId;
+    void model;
+    return this.loadSingleTrackParameters().catch(() => normalizeSingleTrack({}));
   }
 
-  async loadAeroConfig(path = 'aero.yaml'): Promise<Record<string, any>> {
-    await this.verifyRoots();
-    return this.parseDocument(await this.fetchDocument(this.resolveConfigPath(path), 'aero config'));
-  }
-
-  async loadRollingResistanceConfig(path = 'rolling.yaml'): Promise<Record<string, any>> {
-    await this.verifyRoots();
-    return this.parseDocument(await this.fetchDocument(this.resolveConfigPath(path), 'rolling resistance config'));
-  }
-
-  async loadBrakeConfig(path = 'brakes.yaml'): Promise<Record<string, any>> {
-    await this.verifyRoots();
-    return this.parseDocument(await this.fetchDocument(this.resolveConfigPath(path), 'brake config'));
-  }
-
-  async loadPowertrainConfig(path = 'powertrain.yaml'): Promise<Record<string, any>> {
-    await this.verifyRoots();
-    return this.parseDocument(await this.fetchDocument(this.resolveConfigPath(path), 'powertrain config'));
-  }
-
-  async loadFinalAccelControllerConfig(path = 'final_accel_controller.yaml'): Promise<Record<string, any>> {
-    await this.verifyRoots();
-    return this.parseDocument(await this.fetchDocument(this.resolveConfigPath(path), 'final accel controller config'));
-  }
-
-  async loadSteeringConfig(path = 'steering.yaml'): Promise<Record<string, any>> {
-    await this.verifyRoots();
-    return this.parseDocument(await this.fetchDocument(this.resolveConfigPath(path), 'steering config'));
-  }
-
-  async loadLowSpeedSafetyConfig(model: ModelType): Promise<Record<string, any>> {
+  async loadLowSpeedSafetyConfig(model: ModelType): Promise<Record<string, unknown>> {
     await this.verifyRoots();
     const suffix = modelKey(model);
     const overrideName = `low_speed_safety_${suffix}.yaml`;
@@ -331,19 +161,10 @@ export class ConfigManager {
     }
   }
 
-  async loadLossOfControlDetectorConfig(model: ModelType): Promise<Record<string, any>> {
-    await this.verifyRoots();
-    const key = modelKey(model);
-    return this.parseDocument(
-      await this.fetchDocument(this.resolveConfigPath('loss_of_control_detector.yaml'), `loss of control detector (${key})`)
-    );
-  }
-
   async loadModelTiming(model: ModelType): Promise<ModelTimingInfo> {
     await this.verifyRoots();
     const defaultTimings: Record<ModelType, ModelTimingInfo> = {
-      [ModelType.ST]: { nominal_dt: 0.02, max_dt: 0.02 },
-      [ModelType.STD]: { nominal_dt: 0.01, max_dt: 0.01 },
+      [ModelType.ST]: { nominal_dt: 0.01, max_dt: 0.016 },
     };
     const path = this.resolveConfigPath('model_timing.yaml');
     try {
@@ -351,8 +172,9 @@ export class ConfigManager {
       const parsed = this.parseDocument(document);
       const modelSection = parsed[modelKey(model)];
       if (modelSection && typeof modelSection === 'object') {
-        const nominal = Number((modelSection as any).nominal_dt);
-        const max = Number((modelSection as any).max_dt);
+        const section = modelSection as Record<string, unknown>;
+        const nominal = Number(section.nominal_dt);
+        const max = Number(section.max_dt);
         if (Number.isFinite(nominal) && Number.isFinite(max)) {
           return { nominal_dt: nominal, max_dt: max };
         }
@@ -361,6 +183,17 @@ export class ConfigManager {
       console.warn(`Timing config missing or invalid at ${path}: ${error}`);
     }
     return defaultTimings[model];
+  }
+
+  async loadStyleParamConfig(): Promise<StyleParamControllerConfig> {
+    // Inline bundle: no remote YAML required.
+    return {
+      ...defaultStyleParamConfig,
+      steerKnots: [...defaultStyleParamConfig.steerKnots],
+      steerDeltas: [...defaultStyleParamConfig.steerDeltas],
+      speedKnots: [...defaultStyleParamConfig.speedKnots],
+      speedDeltas: [...defaultStyleParamConfig.speedDeltas],
+    };
   }
 
   private resolveConfigPath(path: string): string {
@@ -391,7 +224,7 @@ export class ConfigManager {
     return body;
   }
 
-  private parseDocument(document: unknown): any {
+  private parseDocument(document: unknown): Record<string, unknown> {
     if (typeof document === 'string') {
       try {
         return parseYamlLike(document);
@@ -400,7 +233,7 @@ export class ConfigManager {
       }
     }
     if (document && typeof document === 'object') {
-      return document as Record<string, any>;
+      return document as Record<string, unknown>;
     }
     return {};
   }

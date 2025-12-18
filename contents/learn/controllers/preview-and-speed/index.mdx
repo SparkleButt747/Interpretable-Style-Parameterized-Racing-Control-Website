@@ -1,95 +1,77 @@
 ---
 title: Preview And Speed
-description: Placeholder for lookahead, target speed, gain scheduling, and smoothing choices.
+description: Information about lookahead, target speed, gain scheduling, and smoothing choices.
 keywords: ["controllers", "preview", "speed planning"]
 ---
 
-## Goal of this controller
+## What we build here
 
-We want something that:
-- is predictable
-- is stable across different corners
-- respects curvature-imposed speed limits
-- produces smooth commands
+A simple, reliable baseline:
 
-This page explains the “baseline improvements” before we introduce style knobs.
+- **Lateral:** preview-based geometric steering  
+- **Longitudinal:** target speed from curvature, tracked with PID  
+- **Shaping:** gain scheduling and rate limits
 
 <Separator className="my-10" />
 
-## Preview targeting (lookahead)
+## Preview targeting (common ingredient)
 
-Choose a target point on the path ahead by distance $L$, then aim toward it.
-
-$$
-e_\psi = \text{wrap}\big(\psi_{\text{target}} - \psi\big)
-$$
+Pick a target point ahead along the path using lookahead $L$.
 
 $$
-\delta = \text{clip}(k_\delta(v)\,e_\psi,\;-\delta_{\max},\;\delta_{\max})
+e_\psi=\text{wrap}(\psi_{\text{target}}-\psi)
 $$
-
-The key is that $k_\delta$ should depend on speed (gain scheduling).
 
 <div className="my-6 rounded-2xl border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-  [INTERACTIVE PLACEHOLDER] Lookahead slider $L$ on S-bend + heading error plot
+  [INTERACTIVE PLACEHOLDER] Lookahead demo on S-bend with $L$ slider + heading error plot
 </div>
 
 <Separator className="my-10" />
 
-## Curvature → target speed
+## Longitudinal: target speed + PID
 
-We use the canonical rule (see Plant & Limits) and track it:
-
-$$
-v_t(s)\approx \sqrt{\frac{\mu g}{|\kappa(s)|+\epsilon}}.
-$$
-
-Then convert target speed error into longitudinal command:
+Target speed is curvature-limited (see Plant & Limits), then tracked:
 
 $$
-a_x = \text{clip}\big(k_v(v_t - v),\; -a_{x,\max},\; a_{x,\max}\big)
+e_v = v_t - v
+$$
+
+$$
+a_x = K_p e_v + K_i\int e_v\,dt + K_d\frac{de_v}{dt}
+$$
+
+Clamp and shape:
+$$
+a_x \leftarrow \text{clip}(a_x,\,-a_{x,\max},\,a_{x,\max}),\quad |\dot a_x|\le j_{\max}.
 $$
 
 <div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [PLOT PLACEHOLDER] Actual speed vs target band through hairpin
+  [PLOT PLACEHOLDER] $v(t)$ tracking $v_t(t)$ through hairpin; show overshoot vs stable tuning
 </div>
 
 <Separator className="my-10" />
 
-## Gain scheduling (why it matters)
+## Gain scheduling and smoothing
 
-At higher speeds, the same steering gain produces more aggressive yaw response.
-A simple schedule example:
+At higher speeds, steering authority should be reduced to avoid chatter.
 
+Example schedule:
 $$
 k_\delta(v)=\frac{k_0}{1+\alpha v^2}.
 $$
 
+And steering rate limiting:
+$$
+|\dot{\delta}|\le \dot{\delta}_{\max}.
+$$
+
 <div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [MINI-DEMO PLACEHOLDER] Toggle: fixed gain vs scheduled gain (show oscillation reduction)
+  [MINI-DEMO PLACEHOLDER] Fixed gain vs scheduled gain; show oscillation reduction
 </div>
 
 <Separator className="my-10" />
 
-## Smoothness (rate limiting)
+## Takeaway
 
-We apply input shaping so commands don’t “snap”:
-
-$$
-\delta \leftarrow \text{rate\_limit}(\delta,\dot{\delta}_{\max}),\quad
-a_x \leftarrow \text{rate\_limit}(a_x,j_{\max})
-$$
-
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [PLOT PLACEHOLDER] Command traces and jerk metric with/without shaping
-</div>
-
-<Separator className="my-10" />
-
-## What this gives us
-
-- Stable path following (less chatter)
-- Speed that respects corners
-- Smooth commands
-- A solid baseline to “stylize” next
-
+This baseline is already “good enough” to drive a lap.
+Next, we’ll make driving **style** explicit.

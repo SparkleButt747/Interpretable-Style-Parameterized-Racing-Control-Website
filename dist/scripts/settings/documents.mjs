@@ -38,8 +38,8 @@ export const Documents = [
                 href: "/style-parameterized",
             },
             {
-                title: "MPCC Foil",
-                href: "/mpcc-foil",
+            title: "Baseline As Foil",
+            href: "/baseline-foil",
             },
         ],
     },
