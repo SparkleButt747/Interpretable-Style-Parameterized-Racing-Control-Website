@@ -621,8 +621,8 @@ function distanceToSegment(point: Vec2, seg: { a: Vec2; b: Vec2 }) {
 }
 
 function computeSegmentHalfWidth(a?: TrackCheckpoint, b?: TrackCheckpoint) {
-  const widthA = a?.width ?? a?.radius * 2 ?? 2
-  const widthB = b?.width ?? b?.radius * 2 ?? widthA
+  const widthA = a ? a.width ?? a.radius * 2 : 2
+  const widthB = b ? b.width ?? b.radius * 2 : widthA
   const base = Math.max(widthA, widthB) * 0.5
   return Math.max(base, 1.4)
 }

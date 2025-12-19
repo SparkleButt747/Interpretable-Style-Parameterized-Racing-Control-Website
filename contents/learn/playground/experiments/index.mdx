@@ -21,9 +21,7 @@ keywords: ["playground", "experiments", "guided"]
 
 **Expected shape:** U-ish curve (too small is unstable, too large is inaccurate).
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [PLOT PLACEHOLDER] $L$ vs $\text{RMSE}(e_\perp)$ and overshoot count
-</div>
+<LookaheadVsOscillation />
 
 <Separator className="my-10" />
 
@@ -36,9 +34,7 @@ keywords: ["playground", "experiments", "guided"]
 - Sweep bias $p_{\text{bias}}$
 - Record lap time, apex hit/miss, exit speed
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [TABLE PLACEHOLDER] Runs grid: settings → lap time / exit speed / apex flags
-</div>
+<ApexBiasTable />
 
 <Separator className="my-10" />
 
@@ -51,18 +47,7 @@ keywords: ["playground", "experiments", "guided"]
 - Plot lap time vs mean jerk
 - Choose a point on the Pareto frontier and justify it
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [PARETO PLACEHOLDER] Scatter: $T_{\text{lap}}$ vs mean jerk; highlight frontier
-</div>
+<ParetoJerkScatter />
 
 <Separator className="my-10" />
-
-## What to write in your logbook (template)
-
-For each experiment:
-- What you predicted
-- What happened (with one screenshot/plot)
-- Why it happened (tie to preview/curvature/limits)
-- One change you made based on the result
-
 

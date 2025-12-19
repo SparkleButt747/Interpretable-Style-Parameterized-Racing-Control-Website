@@ -134,17 +134,14 @@ export class JsSimulationBackend implements SimulationBackend {
   }
 
   private estimateAxleSlips(state: number[]): { front: number; rear: number } {
-    if (isSingleTrackParameters(this.params)) {
-      return { front: 0, rear: 0 };
-    }
     const speed = this.indexValue(state, this.indices.longitudinalIndex);
     const beta = this.indexValue(state, this.indices.slipIndex);
     const yawRate = this.indexValue(state, this.indices.yawRateIndex);
     const steering = this.indexValue(state, this.indices.steeringIndex);
     const vLong = speed * Math.cos(beta);
     const vLat = speed * Math.sin(beta);
-    const front = Math.atan2(vLat + this.params.a * yawRate, Math.max(Math.abs(vLong), 1e-6)) - steering;
-    const rear = Math.atan2(vLat - this.params.b * yawRate, Math.max(Math.abs(vLong), 1e-6));
+    const front = Math.atan2(vLat + this.params.l_f * yawRate, Math.max(Math.abs(vLong), 1e-6)) - steering;
+    const rear = Math.atan2(vLat - this.params.l_r * yawRate, Math.max(Math.abs(vLong), 1e-6));
     return { front, rear };
   }
 

@@ -38,6 +38,8 @@ const loopSteps = [
   { title: "Motion", detail: "Integrate + re-sense → back to state." },
 ]
 
+const linearEase = (t: number) => t
+
 const knobLabels: Array<{ key: keyof StyleFrame; label: string }> = [
   { key: "apex", label: "Apex offset" },
   { key: "entry", label: "Entry vs exit" },
@@ -72,7 +74,7 @@ export default function IntroLoopHero() {
   const accel = (styleFrame.entry * 3.4 - styleFrame.risk * 1.4).toFixed(2)
 
   const sharedMotion = {
-    transition: { repeat: Infinity, ease: "linear", duration: 13, times },
+    transition: { repeat: Infinity, ease: linearEase, duration: 13, times },
   }
 
   return (
@@ -118,7 +120,7 @@ export default function IntroLoopHero() {
               strokeLinejoin="round"
               strokeDasharray="14 14"
               animate={{ pathOffset: [0, 1] }}
-              transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
+              transition={{ repeat: Infinity, duration: 10, ease: linearEase }}
             />
 
             <motion.line

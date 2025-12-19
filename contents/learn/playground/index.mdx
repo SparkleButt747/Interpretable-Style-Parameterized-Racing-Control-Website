@@ -11,11 +11,9 @@ This is where learning becomes measurable:
 - Pick a track (S-bend / Hairpin / Chicane)
 - Choose controller (Style-Param / baseline)
 - Tune sliders and toggles
-- Run, replay, compare, export
+- Run, replay, compare
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [UI PLACEHOLDER] Main simulator layout: controls + track + overlays + plots + metrics
-</div>
+<PlaygroundLayoutDemo />
 
 <Separator className="my-10" />
 
@@ -26,9 +24,7 @@ This is where learning becomes measurable:
 - Style sliders: apex offset, entry/exit bias, risk, smoothness
 - Opponent: baseline ghost
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [CONTROL PANEL PLACEHOLDER] Sliders and toggles with short tooltips
-</div>
+<ControlPanelDemo />
 
 <Separator className="my-10" />
 
@@ -39,9 +35,7 @@ This is where learning becomes measurable:
 - Friction donut gauge
 - Error traces and command plots
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [OVERLAY PLACEHOLDER] Toggle grid: curvature • speed band • friction • errors • commands
-</div>
+<OverlayToggleGrid />
 
 <Separator className="my-10" />
 
@@ -58,18 +52,6 @@ $$
 \max \frac{\sqrt{a_x^2 + (v^2\kappa)^2}}{\mu g}
 $$
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [METRICS PANEL PLACEHOLDER] Badges + sparklines + pass/fail flags
-</div>
+<MetricsPanelDemo />
 
 <Separator className="my-10" />
-
-## Reproducibility
-
-- Seed-fixed runs
-- Shareable preset hash (track, $\mu$, $L$, style knobs, controller)
-
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [EXPORT BAR PLACEHOLDER] Download CSV • Copy share link
-</div>
-

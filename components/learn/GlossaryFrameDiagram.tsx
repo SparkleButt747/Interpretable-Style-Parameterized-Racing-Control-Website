@@ -16,6 +16,8 @@ const frameTrack: TrackPoint[] = [
   { x: 54, y: 110 },
 ]
 
+const linearEase = (t: number) => t
+
 type Vector = { x: number; y: number }
 
 export default function GlossaryFrameDiagram() {
@@ -56,7 +58,7 @@ export default function GlossaryFrameDiagram() {
   )
 
   const sharedMotion = {
-    transition: { repeat: Infinity, ease: "linear", duration: 11.5, times },
+    transition: { repeat: Infinity, ease: linearEase, duration: 11.5, times },
   }
 
   return (
@@ -105,7 +107,7 @@ export default function GlossaryFrameDiagram() {
             strokeDasharray="14 18"
             strokeLinecap="round"
             animate={{ pathOffset: [0, 1] }}
-            transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
+            transition={{ repeat: Infinity, duration: 10, ease: linearEase }}
           />
 
           <motion.line

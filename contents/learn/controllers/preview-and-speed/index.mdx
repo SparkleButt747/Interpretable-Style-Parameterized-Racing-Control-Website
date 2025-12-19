@@ -22,9 +22,7 @@ $$
 e_\psi=\text{wrap}(\psi_{\text{target}}-\psi)
 $$
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-  [INTERACTIVE PLACEHOLDER] Lookahead demo on S-bend with $L$ slider + heading error plot
-</div>
+<PreviewLookaheadDemo />
 
 <Separator className="my-10" />
 
@@ -45,9 +43,7 @@ $$
 a_x \leftarrow \text{clip}(a_x,\,-a_{x,\max},\,a_{x,\max}),\quad |\dot a_x|\le j_{\max}.
 $$
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [PLOT PLACEHOLDER] $v(t)$ tracking $v_t(t)$ through hairpin; show overshoot vs stable tuning
-</div>
+<SpeedTrackingPlot />
 
 <Separator className="my-10" />
 
@@ -65,9 +61,7 @@ $$
 |\dot{\delta}|\le \dot{\delta}_{\max}.
 $$
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [MINI-DEMO PLACEHOLDER] Fixed gain vs scheduled gain; show oscillation reduction
-</div>
+<GainSchedulingMiniDemo />
 
 <Separator className="my-10" />
 

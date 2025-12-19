@@ -66,6 +66,8 @@ const naiveTrack: TrackPoint[] = [
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max)
 
+const linearEase = (t: number) => t
+
 export default function NaiveBaselineDemo() {
   const { closedPoints, times, pathD } = useMemo(() => makeLoop(naiveTrack), [])
   const [state, setState] = useState<Record<ControlKey, number>>(
@@ -131,7 +133,7 @@ export default function NaiveBaselineDemo() {
   }, [slowdownCut, state.kDelta, state.lookahead])
 
   const sharedMotion = {
-    transition: { repeat: Infinity, ease: "linear", duration: lapSeconds, times },
+    transition: { repeat: Infinity, ease: linearEase, duration: lapSeconds, times },
   }
 
   return (
@@ -177,7 +179,7 @@ export default function NaiveBaselineDemo() {
               strokeDasharray="14 18"
               strokeLinecap="round"
               animate={{ pathOffset: [0, 1] }}
-              transition={{ repeat: Infinity, duration: lapSeconds * 1.1, ease: "linear" }}
+              transition={{ repeat: Infinity, duration: lapSeconds * 1.1, ease: linearEase }}
             />
 
             <motion.line

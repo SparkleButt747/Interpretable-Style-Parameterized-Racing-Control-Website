@@ -18,9 +18,7 @@ keywords: ["controllers", "style-parameterized", "knobs"]
 - **Risk** $p_{\text{risk}}$  
 - **Smoothness** $p_{\text{smooth}}$
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [CARD GRID PLACEHOLDER] 4 knob cards with mini corner animations
-</div>
+<StyleKnobCards />
 
 <Separator className="my-10" />
 
@@ -34,9 +32,7 @@ $$
 \tilde{\gamma}(s)=\gamma(s)+d(s;p_{\text{apex}},p_{\text{bias}})\mathbf{n}(s)
 $$
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [DIAGRAM PLACEHOLDER] Lane-normal offset profiles for early vs late apex
-</div>
+<ApexOffsetDiagram />
 
 <Separator className="my-10" />
 
@@ -46,9 +42,7 @@ $$
 v_t(s;p_{\text{risk}})=\eta(p_{\text{risk}})\sqrt{\frac{\mu g}{|\kappa(s)|+\epsilon}}
 $$
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [INTERACTIVE PLACEHOLDER] Risk slider changes speed band + friction usage
-</div>
+<RiskSpeedBandWidget />
 
 <Separator className="my-10" />
 
@@ -59,9 +53,7 @@ $$
 j_{\max}=j_{\max}(p_{\text{smooth}})
 $$
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [PLOT PLACEHOLDER] Lap time vs mean jerk as smoothness varies (Pareto-like curve)
-</div>
+<SmoothnessParetoPlot />
 
 <Separator className="my-10" />
 

@@ -29,7 +29,7 @@ const fetcher: Fetcher = async (input) => {
 };
 
 function initialStateFromTrack(trackId: string) {
-  return async (tracksPromise: Promise<ReturnType<typeof loadTracks>>) => {
+  return async (tracksPromise: ReturnType<typeof loadTracks>) => {
     const tracks = await tracksPromise;
     const track = tracks.find((t) => t.id === trackId) ?? tracks[0];
     const pose = track?.metadata.startPose;
@@ -72,8 +72,9 @@ async function main() {
   });
   await daemon.ready;
 
-  let telem = await daemon.snapshot();
-  let time = 0;
+  const snapshot = await daemon.snapshot();
+  let telem = snapshot.telemetry;
+  let time = snapshot.simulation_time_s ?? 0;
   console.log("step,time,x,y,yaw,speed,target_speed,accel_cmd,steer_rate");
   for (let k = 0; k < STEPS; k += 1) {
     const state = stateFromTelemetry(telem);

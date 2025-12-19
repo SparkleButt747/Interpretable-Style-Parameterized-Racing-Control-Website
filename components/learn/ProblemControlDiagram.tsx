@@ -16,6 +16,8 @@ const diagramTrack: TrackPoint[] = [
   { x: 54, y: 96 },
 ]
 
+const linearEase = (t: number) => t
+
 export default function ProblemControlDiagram() {
   const { closedPoints, times, pathD } = useMemo(() => makeLoop(diagramTrack), [])
   const lookahead = useMemo(() => offsetLoop(diagramTrack, 2), [])
@@ -29,7 +31,7 @@ export default function ProblemControlDiagram() {
   const targetY = target.map((point) => point.y)
 
   const sharedMotion = {
-    transition: { repeat: Infinity, ease: "linear", duration: 12, times },
+    transition: { repeat: Infinity, ease: linearEase, duration: 12, times },
   }
 
   return (
@@ -74,7 +76,7 @@ export default function ProblemControlDiagram() {
               strokeDasharray="14 18"
               strokeLinecap="round"
               animate={{ pathOffset: [0, 1] }}
-              transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
+              transition={{ repeat: Infinity, duration: 10, ease: linearEase }}
             />
 
             <motion.line

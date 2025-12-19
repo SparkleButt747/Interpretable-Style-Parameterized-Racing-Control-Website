@@ -101,6 +101,8 @@ const ovalTrack: TrackPoint[] = [
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max)
 
+const linearEase = (t: number) => t
+
 export default function ChallengeGhostPlayground() {
   const { closedPoints, times, pathD } = useMemo(() => makeLoop(ovalTrack), [])
   const xKeyframes = closedPoints.map((point) => point.x)
@@ -177,10 +179,10 @@ export default function ChallengeGhostPlayground() {
   const markerOffset = 50 - normalizedGap * 42
 
   const userMotion = {
-    transition: { repeat: Infinity, ease: "linear", duration: lapSeconds, times },
+    transition: { repeat: Infinity, ease: linearEase, duration: lapSeconds, times },
   }
   const ghostMotion = {
-    transition: { repeat: Infinity, ease: "linear", duration: ghost.duration, times },
+    transition: { repeat: Infinity, ease: linearEase, duration: ghost.duration, times },
   }
 
   return (
@@ -247,7 +249,7 @@ export default function ChallengeGhostPlayground() {
               strokeDasharray="14 18"
               strokeLinecap="round"
               animate={{ pathOffset: [0, 1] }}
-              transition={{ repeat: Infinity, duration: lapSeconds * 1.1, ease: "linear" }}
+              transition={{ repeat: Infinity, duration: lapSeconds * 1.1, ease: linearEase }}
             />
 
             <motion.line

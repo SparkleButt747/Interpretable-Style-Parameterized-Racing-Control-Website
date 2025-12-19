@@ -23,23 +23,7 @@ $$
 
 where $\alpha$ is the angle to the lookahead point and $L_d$ is the lookahead distance.
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [DIAGRAM PLACEHOLDER] Pure pursuit geometry: target point, angle $\alpha$, chord
-</div>
-
-<Separator className="my-10" />
-
-## Baseline B: Stanley (steering)
-
-Combine heading error and cross-track error:
-
-$$
-\delta = e_\psi + \arctan\left(\frac{k_e e_y}{v+\epsilon}\right)
-$$
-
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [DIAGRAM PLACEHOLDER] Stanley: cross-track error $e_y$ and heading error $e_\psi$
-</div>
+<PurePursuitDiagram />
 
 <Separator className="my-10" />
 
@@ -53,6 +37,7 @@ $$
   [INTERACTIVE PLACEHOLDER] Presets:
   Conservative vs Aggressive (different $L$, gains, smoothness limits)
 </div>
+<BaselinePresetsDemo />
 
 <Separator className="my-10" />
 

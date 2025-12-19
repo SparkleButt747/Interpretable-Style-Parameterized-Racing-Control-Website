@@ -28,9 +28,7 @@ $$
 \dot{v}=a_x.
 $$
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [DIAGRAM PLACEHOLDER] Bicycle geometry: $L,l_f,l_r,\delta,\psi$
-</div>
+<BicycleDiagram />
 
 <Separator className="my-10" />
 
@@ -40,9 +38,7 @@ $$
 (a_x)^2 + (v^2\kappa)^2 \le (\mu g)^2.
 $$
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [WIDGET PLACEHOLDER] Friction donut gauge (lateral vs longitudinal usage)
-</div>
+<FrictionDonutWidget />
 
 <Separator className="my-10" />
 
@@ -52,9 +48,7 @@ $$
 v_t(s)\approx \sqrt{\frac{\mu g}{|\kappa(s)|+\epsilon}}.
 $$
 
-<div className="my-6 rounded-2xl border bg-muted/20 p-6 text-sm text-muted-foreground">
-  [INTERACTIVE PLACEHOLDER] Curvature heatmap + $v_t(s)$ band; toggle $\mu$
-</div>
+<CurvatureSpeedBand />
 
 <Separator className="my-10" />
 
@@ -68,4 +62,3 @@ Optional jerk bound:
 $$
 |\dot{a}_x|\le j_{\max}.
 $$
-

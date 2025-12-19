@@ -38,6 +38,8 @@ const presets: Record<
 
 const userLapSeconds = 12.6
 
+const linearEase = (t: number) => t
+
 export default function GhostRacePreview() {
   const { closedPoints, times, pathD } = useMemo(() => makeLoop(raceTrack), [])
   const xKeyframes = closedPoints.map((point) => point.x)
@@ -117,7 +119,7 @@ export default function GhostRacePreview() {
               strokeDasharray="12 14"
               strokeLinecap="round"
               animate={{ pathOffset: [0, 1] }}
-              transition={{ repeat: Infinity, duration: ghost.duration, ease: "linear" }}
+              transition={{ repeat: Infinity, duration: ghost.duration, ease: linearEase }}
             />
 
             <motion.circle
@@ -126,7 +128,7 @@ export default function GhostRacePreview() {
               stroke="white"
               strokeWidth={1.5}
               animate={{ cx: xKeyframes, cy: yKeyframes }}
-              transition={{ repeat: Infinity, duration: userLapSeconds, ease: "linear", times }}
+              transition={{ repeat: Infinity, duration: userLapSeconds, ease: linearEase, times }}
             />
             <motion.circle
               r={6.2}
@@ -134,7 +136,7 @@ export default function GhostRacePreview() {
               stroke="white"
               strokeWidth={1.5}
               animate={{ cx: xKeyframes, cy: yKeyframes }}
-              transition={{ repeat: Infinity, duration: ghost.duration, ease: "linear", times }}
+              transition={{ repeat: Infinity, duration: ghost.duration, ease: linearEase, times }}
             />
             <motion.circle
               r={3.4}
@@ -142,7 +144,7 @@ export default function GhostRacePreview() {
               stroke="rgba(59,130,246,0.7)"
               strokeWidth={1.4}
               animate={{ cx: xKeyframes, cy: yKeyframes }}
-              transition={{ repeat: Infinity, duration: ghost.duration * 0.5, ease: "linear", times }}
+              transition={{ repeat: Infinity, duration: ghost.duration * 0.5, ease: linearEase, times }}
             />
             <motion.rect
               x={6}
