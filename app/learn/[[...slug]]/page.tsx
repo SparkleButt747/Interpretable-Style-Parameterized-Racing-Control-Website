@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { Link } from "lib/transition"
 
 import { Settings } from "@/types/settings"
 import { getDocument } from "@/lib/markdown"
@@ -30,6 +31,17 @@ export default async function Pages({ params }: PageProps) {
           <h1 className="text-3xl font-semibold">{frontmatter.title}</h1>
           <p className="text-sm">{frontmatter.description}</p>
           <Separator />
+        </div>
+        <div className="mt-4 flex flex-col gap-3 rounded-2xl border bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            Tip: keep the <span className="font-medium text-foreground">Playground</span> open in another tab and try each idea as you read.
+          </p>
+          <Link
+            href="/playground"
+            className="inline-flex items-center justify-center rounded-xl border bg-background px-4 py-2 text-sm font-medium hover:bg-muted/40"
+          >
+            Open Playground
+          </Link>
         </div>
         <Typography>
           <section>{content}</section>

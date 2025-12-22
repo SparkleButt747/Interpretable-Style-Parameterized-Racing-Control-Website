@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator"
 import { Typography } from "@/components/ui/typography"
 import { VeloxPlayground } from "./VeloxPlayground"
 import { loadVeloxBundle } from "./loadVelox"
+import InteractiveDisclaimer from "@/components/learn/InteractiveDisclaimer"
 
 export default async function PlaygroundPage() {
   const res = await getStandaloneSection("playground")
@@ -20,6 +21,9 @@ export default async function PlaygroundPage() {
       </div>
       <div className="w-full">
         <VeloxPlayground bundle={bundle} />
+      </div>
+      <div className="mx-auto w-full max-w-4xl">
+        <InteractiveDisclaimer variant="playground" />
       </div>
       <div className="mx-auto w-full max-w-4xl">
         <Typography>

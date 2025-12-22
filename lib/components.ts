@@ -36,6 +36,7 @@ import ControlPanelDemo from "@/components/learn/ControlPanelDemo"
 import OverlayToggleGrid from "@/components/learn/OverlayToggleGrid"
 import MetricsPanelDemo from "@/components/learn/MetricsPanelDemo"
 import { ApexBiasTable, LookaheadVsOscillation, ParetoJerkScatter } from "@/components/learn/ExperimentPlots"
+import InteractiveDisclaimer from "@/components/learn/InteractiveDisclaimer"
 
 export const components = {
   a: RoutedLink,
@@ -77,6 +78,7 @@ export const components = {
   ControlPanelDemo,
   OverlayToggleGrid,
   MetricsPanelDemo,
+  InteractiveDisclaimer,
   LookaheadVsOscillation,
   ApexBiasTable,
   ParetoJerkScatter,
